@@ -1,485 +1,822 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Family Tracker 2026 (Sync Mode)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #020617; 
-            color: #f1f5f9;
-            -webkit-tap-highlight-color: transparent;
-        }
+      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
 
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-color: #020617;
+        color: #f1f5f9;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-        /* Table Architecture */
-        .table-wrapper {
-            position: relative;
-            border-radius: 1.5rem;
-            border: 1px solid #1e293b;
-            background: #0f172a;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
 
-        .scroll-container { overflow-x: auto; overflow-y: hidden; }
-        table { border-collapse: separate; border-spacing: 0; width: 100%; }
+      /* Table Architecture */
+      .table-wrapper {
+        position: relative;
+        border-radius: 1.5rem;
+        border: 1px solid #1e293b;
+        background: #0f172a;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
 
-        .sticky-name {
-            position: sticky;
-            left: 0;
-            z-index: 40;
-            background: #0f172a;
-            min-width: 140px;
-            padding: 0 0.75rem;
-            border-right: 1px solid #1e293b;
-            text-align: left;
-        }
+      .scroll-container {
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+      table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+      }
 
-        th { height: 75px; background: #0f172a; border-bottom: 1px solid #1e293b; vertical-align: middle; }
-        .header-date-stack { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 45px; gap: 1px; }
+      .sticky-name {
+        position: sticky;
+        left: 0;
+        z-index: 40;
+        background: #0f172a;
+        min-width: 100px;
+        padding: 0 0.75rem;
+        border-right: 1px solid #1e293b;
+        text-align: left;
+      }
 
-        .log-input {
-            width: 100%; height: 48px; background: rgba(30, 41, 59, 0.3); border: 1px solid transparent;
-            border-radius: 0.6rem; outline: none; text-align: center; font-size: 1rem; font-weight: 700;
-            color: #f1f5f9; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            appearance: none;
-            -moz-appearance: textfield;
-        }
-        
-        .log-input::-webkit-outer-spin-button,
-        .log-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+      .sticky-avg {
+        position: sticky;
+        right: 0;
+        z-index: 40;
+        background: #0f172a;
+        min-width: 55px;
+        border-left: 1px solid #1e293b;
+        text-align: center;
+      }
 
-        .log-input.has-value { background: rgba(30, 41, 59, 0.8); color: #818cf8; }
-        .winner-cell-bg { background-color: rgba(234, 179, 8, 0.15) !important; color: #fcd34d !important; }
+      th {
+        height: 75px;
+        background: #0f172a;
+        border-bottom: 1px solid #1e293b;
+        vertical-align: middle;
+      }
+      .header-date-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 45px;
+        gap: 1px;
+      }
 
-        /* Speech Bubble */
-        .speech-bubble {
-            position: relative;
-            background: #ffffff;
-            border-radius: 1.25rem;
-            padding: 0.75rem 1rem;
-            color: #1e293b;
-            font-size: 0.75rem;
-            font-weight: 700;
-            line-height: 1.2;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            max-width: 180px;
-            text-align: center;
-        }
-        .speech-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-width: 8px 8px 0;
-            border-style: solid;
-            border-color: #ffffff transparent transparent;
-        }
+      .log-input {
+        width: 100%;
+        height: 36px;
+        background: rgba(30, 41, 59, 0.3);
+        border: 1px solid transparent;
+        border-radius: 0.5rem;
+        outline: none;
+        text-align: center;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        appearance: none;
+        -moz-appearance: textfield;
+      }
 
-        /* Animations */
-        @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
-        @keyframes blink { 0%, 90%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
-        @keyframes heartPop { 0% { opacity: 0; transform: scale(0.5); } 50% { opacity: 1; } 100% { transform: scale(1.5) translateY(-20px); opacity: 0; } }
+      .log-input::-webkit-outer-spin-button,
+      .log-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
 
-        .pet-animate-breathe { animation: breathe 3s ease-in-out infinite; }
-        .pet-animate-float { animation: float 4s ease-in-out infinite; }
-        .eye-blink { transform-origin: center; animation: blink 4s infinite; }
-        .heart-particle { animation: heartPop 2s infinite; }
+      .log-input.has-value {
+        background: rgba(30, 41, 59, 0.8);
+        color: #818cf8;
+      }
+      .winner-cell-bg {
+        background-color: rgba(234, 179, 8, 0.15) !important;
+        color: #fcd34d !important;
+      }
 
-        .pet-card {
-            background: linear-gradient(145deg, #1e293b, #020617); border: 1px solid #334155;
-            border-radius: 3rem; padding: 2rem 1.5rem; transition: all 0.4s ease;
-            position: relative; box-shadow: 0 15px 45px -15px rgba(0,0,0,0.7);
-        }
-        
-        .coin-jar {
-            width: 70px; height: 100px; background: rgba(255, 255, 255, 0.02); border: 2px solid rgba(255, 255, 255, 0.1);
-            border-top: 4px solid rgba(255, 255, 255, 0.15); border-radius: 0.5rem 0.5rem 1.5rem 1.5rem;
-            position: relative; display: flex; flex-direction: column-reverse; align-items: center;
-            padding: 4px; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-        }
-        .coin {
-            width: 50px; height: 7px; background: linear-gradient(to right, #fbbf24, #f59e0b);
-            border: 1px solid #92400e; border-radius: 10px; margin-bottom: 2px; flex-shrink: 0;
-            animation: dropCoin 0.4s ease-out forwards;
-        }
-        @keyframes dropCoin { from { transform: translateY(-100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      /* Speech Bubble */
+      .speech-bubble {
+        position: relative;
+        background: #ffffff;
+        border-radius: 1.25rem;
+        padding: 0.75rem 1rem;
+        color: #1e293b;
+        font-size: 0.75rem;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        max-width: 180px;
+        text-align: center;
+      }
+      .speech-bubble::after {
+        content: "";
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 8px 8px 0;
+        border-style: solid;
+        border-color: #ffffff transparent transparent;
+      }
 
-        .pet-svg-container { width: 160px; height: 160px; margin-bottom: 0.5rem; position: relative; }
-        .sick-pet-overlay { filter: grayscale(0.5) sepia(0.2) brightness(0.7); }
-        .ghost-pet-overlay { filter: grayscale(1) contrast(0.5) opacity(0.3) blur(1px); }
+      /* Animations */
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.04);
+        }
+      }
+      @keyframes blink {
+        0%,
+        90%,
+        100% {
+          transform: scaleY(1);
+        }
+        95% {
+          transform: scaleY(0.1);
+        }
+      }
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+      @keyframes heartPop {
+        0% {
+          opacity: 0;
+          transform: scale(0.5);
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          transform: scale(1.5) translateY(-20px);
+          opacity: 0;
+        }
+      }
 
-        .calendar-card {
-            background: #1e293b66; border: 1px solid #334155; aspect-ratio: 1/1;
-            border-radius: 0.75rem; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; position: relative;
-        }
-        .calendar-winner { background: #6366f1; border: 1px solid #818cf8; box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
+      .pet-animate-breathe {
+        animation: breathe 3s ease-in-out infinite;
+      }
+      .pet-animate-float {
+        animation: float 4s ease-in-out infinite;
+      }
+      .eye-blink {
+        transform-origin: center;
+        animation: blink 4s infinite;
+      }
+      .heart-particle {
+        animation: heartPop 2s infinite;
+      }
 
-        /* Chart Styling */
-        .bar-container {
-            height: 100px;
-            display: flex;
-            align-items: flex-end;
-            gap: 2px;
-            padding-bottom: 4px;
-        }
-        .bar {
-            flex: 1;
-            background: #334155;
-            border-radius: 2px 2px 0 0;
-            transition: height 0.5s ease, background 0.3s ease;
-            position: relative;
-        }
-        .bar:hover { background: #6366f1; }
-        .bar:hover::after {
-            content: attr(data-value) "h";
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 8px;
-            font-weight: 800;
-            color: #6366f1;
-        }
+      .pet-card {
+        background: linear-gradient(145deg, #1e293b, #020617);
+        border: 1px solid #334155;
+        border-radius: 3rem;
+        padding: 2rem 1.5rem;
+        transition: all 0.4s ease;
+        position: relative;
+        box-shadow: 0 15px 45px -15px rgba(0, 0, 0, 0.7);
+      }
 
-        .consistency-cell {
-            width: 100%;
-            aspect-ratio: 1/1;
-            border-radius: 4px;
-            background: #1e293b;
-            transition: all 0.3s ease;
+      .coin-jar {
+        width: 70px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top: 4px solid rgba(255, 255, 255, 0.15);
+        border-radius: 0.5rem 0.5rem 1.5rem 1.5rem;
+        position: relative;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: center;
+        padding: 4px;
+        overflow: hidden;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+      }
+      .coin {
+        width: 50px;
+        height: 7px;
+        background: linear-gradient(to right, #fbbf24, #f59e0b);
+        border: 1px solid #92400e;
+        border-radius: 10px;
+        margin-bottom: 2px;
+        flex-shrink: 0;
+        animation: dropCoin 0.4s ease-out forwards;
+      }
+      @keyframes dropCoin {
+        from {
+          transform: translateY(-100px);
+          opacity: 0;
         }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
 
-        /* Stats Boxes */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-        .stats-box {
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 1.25rem;
-            padding: 0.75rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+      .pet-svg-container {
+        width: 160px;
+        height: 160px;
+        margin-bottom: 0.5rem;
+        position: relative;
+      }
+      .sick-pet-overlay {
+        filter: grayscale(0.5) sepia(0.2) brightness(0.7);
+      }
+      .ghost-pet-overlay {
+        filter: grayscale(1) contrast(0.5) opacity(0.3) blur(1px);
+      }
 
-        /* Leaderboard Styling */
-        .rank-card {
-            background: rgba(15, 23, 42, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            border-radius: 1rem;
-            padding: 0.75rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            transition: transform 0.3s ease;
-        }
-        .rank-card:hover { transform: translateX(5px); background: rgba(15, 23, 42, 0.6); }
+      .calendar-card {
+        background: #1e293b66;
+        border: 1px solid #334155;
+        aspect-ratio: 1/1;
+        border-radius: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .calendar-winner {
+        background: #6366f1;
+        border: 1px solid #818cf8;
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+      }
 
-        /* Today Highlight */
-        .today-highlight {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.2)) !important;
-            box-shadow: inset 0 0 0 2px #6366f1, 0 0 20px rgba(99, 102, 241, 0.3);
-        }
-        .today-header {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.3)) !important;
-            position: relative;
-        }
-        .today-header::after {
-            content: 'TODAY';
-            position: absolute;
-            bottom: 4px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 6px;
-            font-weight: 900;
-            color: #818cf8;
-            letter-spacing: 0.1em;
-        }
+      /* Chart Styling */
+      .bar-container {
+        height: 100px;
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        padding-bottom: 4px;
+      }
+      .bar {
+        flex: 1;
+        background: #334155;
+        border-radius: 2px 2px 0 0;
+        transition:
+          height 0.5s ease,
+          background 0.3s ease;
+        position: relative;
+      }
+      .bar:hover {
+        background: #6366f1;
+      }
+      .bar:hover::after {
+        content: attr(data-value) "h";
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 8px;
+        font-weight: 800;
+        color: #6366f1;
+      }
+
+      .consistency-cell {
+        width: 100%;
+        aspect-ratio: 1/1;
+        border-radius: 4px;
+        background: #1e293b;
+        transition: all 0.3s ease;
+      }
+
+      /* Stats Boxes */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+      .stats-box {
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 1.25rem;
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      /* Leaderboard Styling */
+      .rank-card {
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.03);
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.3s ease;
+      }
+      .rank-card:hover {
+        transform: translateX(5px);
+        background: rgba(15, 23, 42, 0.6);
+      }
+
+      /* Today Highlight */
+      .today-highlight {
+        background: linear-gradient(
+          135deg,
+          rgba(99, 102, 241, 0.3),
+          rgba(139, 92, 246, 0.2)
+        ) !important;
+        box-shadow:
+          inset 0 0 0 2px #6366f1,
+          0 0 20px rgba(99, 102, 241, 0.3);
+      }
+      .today-header {
+        background: linear-gradient(
+          135deg,
+          rgba(99, 102, 241, 0.4),
+          rgba(139, 92, 246, 0.3)
+        ) !important;
+        position: relative;
+      }
+      .today-header::after {
+        content: "TODAY";
+        position: absolute;
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 6px;
+        font-weight: 900;
+        color: #818cf8;
+        letter-spacing: 0.1em;
+      }
     </style>
-</head>
-<body class="p-4 md:p-10 pb-20">
-
-    <div class="max-w-7xl mx-auto">
-        <header class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
-            <div class="flex items-center gap-4">
-                <div class="h-16 w-16 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                </div>
-                <div>
-                    <h1 class="text-4xl font-black text-white tracking-tighter uppercase" id="pageTitle">Family Tracker</h1>
-                    <p class="text-slate-500 text-xs font-black uppercase tracking-[0.3em]" id="pageSub">Cloud Sync Active</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-4">
-                <nav class="flex bg-slate-900 border border-slate-800 p-1.5 rounded-3xl shadow-inner">
-                    <button id="viewTracker" class="px-8 py-3 rounded-2xl text-[10px] font-black transition-all bg-indigo-600 text-white shadow-xl">DASHBOARD</button>
-                </nav>
-                <div class="flex items-center bg-slate-900 border border-slate-800 p-1.5 rounded-3xl">
-                    <button id="prevBtn" class="p-2.5 hover:bg-slate-800 rounded-2xl text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></button>
-                    <div class="px-6 text-center min-w-[150px]"><span id="monthDisplay" class="text-sm font-black text-white uppercase tracking-wider"></span></div>
-                    <button id="nextBtn" class="p-2.5 hover:bg-slate-800 rounded-2xl text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg></button>
-                </div>
-            </div>
-        </header>
-
-        <div id="trackerSection">
-            <div class="table-wrapper mb-12">
-                <div class="scroll-container no-scrollbar">
-                    <table>
-                        <thead><tr id="headerRow"><th class="sticky-name text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Family Registry</th></tr></thead>
-                        <tbody id="memberRows"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                <div class="bg-slate-900/40 border border-slate-800/60 rounded-[3.5rem] p-10 shadow-inner">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-                        <div class="flex items-center gap-4">
-                            <span class="text-3xl">🏆</span>
-                            <h2 class="text-2xl font-black text-white tracking-tighter uppercase">Champion of the Day</h2>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-7 gap-2 md:gap-3" id="calendarGrid"></div>
-                </div>
-
-                <div class="bg-slate-900/40 border border-slate-800/60 rounded-[3.5rem] p-10 shadow-inner">
-                    <div class="flex items-center gap-4 mb-8">
-                        <span class="text-3xl">🥇</span>
-                        <h2 class="text-2xl font-black text-white tracking-tighter uppercase">Live Standings</h2>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 mb-10" id="liveLeaderboard"></div>
-                    <div class="flex items-center gap-4 mb-8">
-                        <span class="text-3xl">📊</span>
-                        <h2 class="text-2xl font-black text-white tracking-tighter uppercase">Family Statistics</h2>
-                    </div>
-                    <div class="stats-grid" id="personalStatsGrid"></div>
-                    <div class="bar-container" id="totalHoursChart"></div>
-                    <div class="mt-4 flex justify-between text-[8px] font-bold text-slate-600 uppercase tracking-widest px-1">
-                        <span>Day 1</span>
-                        <span id="chartEndDay">Day 31</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-slate-900/40 border border-slate-800/60 rounded-[3.5rem] p-10 shadow-inner mb-12">
-                <div class="flex items-center gap-4 mb-10">
-                    <span class="text-3xl">🔥</span>
-                    <h2 class="text-2xl font-black text-white tracking-tighter uppercase">Family Consistency</h2>
-                </div>
-                <div class="flex flex-col gap-4" id="consistencyGrid"></div>
-            </div>
+  </head>
+  <body class="p-4 md:p-10 pb-20">
+    <div class="max-w-[1600px] mx-auto">
+      <header
+        class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            class="h-16 w-16 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-8 w-8 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.5"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1
+              class="text-4xl font-black text-white tracking-tighter uppercase"
+              id="pageTitle"
+            >
+              Family Tracker
+            </h1>
+            <p
+              class="text-slate-500 text-xs font-black uppercase tracking-[0.3em]"
+              id="pageSub"
+            >
+              Cloud Sync Active
+            </p>
+          </div>
         </div>
 
+        <div class="flex items-center gap-4">
+          <nav
+            class="flex bg-slate-900 border border-slate-800 p-1.5 rounded-3xl shadow-inner"
+          >
+            <button
+              id="viewTracker"
+              class="px-8 py-3 rounded-2xl text-[10px] font-black transition-all bg-indigo-600 text-white shadow-xl"
+            >
+              DASHBOARD
+            </button>
+          </nav>
+          <div
+            class="flex items-center bg-slate-900 border border-slate-800 p-1.5 rounded-3xl"
+          >
+            <button
+              id="prevBtn"
+              class="p-2.5 hover:bg-slate-800 rounded-2xl text-slate-500"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+            <div class="px-6 text-center min-w-[150px]">
+              <span
+                id="monthDisplay"
+                class="text-sm font-black text-white uppercase tracking-wider"
+              ></span>
+            </div>
+            <button
+              id="nextBtn"
+              class="p-2.5 hover:bg-slate-800 rounded-2xl text-slate-500"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
 
+      <div id="trackerSection">
+        <div class="table-wrapper mb-12">
+          <div class="scroll-container no-scrollbar">
+            <table>
+              <thead>
+                <tr id="headerRow">
+                  <th
+                    class="sticky-name text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]"
+                  >
+                    Family Registry
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="memberRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          <div
+            class="bg-slate-900/40 border border-slate-800/60 rounded-[3.5rem] p-10 shadow-inner"
+          >
+            <div
+              class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10"
+            >
+              <div class="flex items-center gap-4">
+                <span class="text-3xl">🏆</span>
+                <h2
+                  class="text-2xl font-black text-white tracking-tighter uppercase"
+                >
+                  Champion of the Day
+                </h2>
+              </div>
+            </div>
+            <div
+              class="grid grid-cols-7 gap-2 md:gap-3"
+              id="calendarGrid"
+            ></div>
+          </div>
+
+          <div
+            class="bg-slate-900/40 border border-slate-800/60 rounded-[3.5rem] p-10 shadow-inner"
+          >
+            <div class="flex items-center gap-4 mb-8">
+              <span class="text-3xl">🥇</span>
+              <h2
+                class="text-2xl font-black text-white tracking-tighter uppercase"
+              >
+                Live Standings
+              </h2>
+            </div>
+            <div
+              class="grid grid-cols-2 gap-3 mb-10"
+              id="liveLeaderboard"
+            ></div>
+            <div class="flex items-center gap-4 mb-8">
+              <span class="text-3xl">📊</span>
+              <h2
+                class="text-2xl font-black text-white tracking-tighter uppercase"
+              >
+                Family Statistics
+              </h2>
+            </div>
+            <div class="stats-grid" id="personalStatsGrid"></div>
+            <div class="bar-container" id="totalHoursChart"></div>
+            <div
+              class="mt-4 flex justify-between text-[8px] font-bold text-slate-600 uppercase tracking-widest px-1"
+            >
+              <span>Day 1</span>
+              <span id="chartEndDay">Day 31</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-slate-900/40 border border-slate-800/60 rounded-[3.5rem] p-10 shadow-inner mb-12"
+        >
+          <div class="flex items-center gap-4 mb-10">
+            <span class="text-3xl">🔥</span>
+            <h2
+              class="text-2xl font-black text-white tracking-tighter uppercase"
+            >
+              Family Consistency
+            </h2>
+          </div>
+          <div class="flex flex-col gap-4" id="consistencyGrid"></div>
+        </div>
+      </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        set,
+        onValue,
+        remove,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Firebase Configuration (Same as RPG Tracker)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDUsDIShAvRwd73ag9_uBKmMWzNc6VNIDs",
-            authDomain: "familytracker-153b0.firebaseapp.com",
-            databaseURL: "https://familytracker-153b0-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "familytracker-153b0",
-            storageBucket: "familytracker-153b0.firebasestorage.app",
-            messagingSenderId: "985759869640",
-            appId: "1:985759869640:web:71ba9b0c33a9db069393fd"
+      // Firebase Configuration (Same as RPG Tracker)
+      const firebaseConfig = {
+        apiKey: "AIzaSyDUsDIShAvRwd73ag9_uBKmMWzNc6VNIDs",
+        authDomain: "familytracker-153b0.firebaseapp.com",
+        databaseURL:
+          "https://familytracker-153b0-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "familytracker-153b0",
+        storageBucket: "familytracker-153b0.firebasestorage.app",
+        messagingSenderId: "985759869640",
+        appId: "1:985759869640:web:71ba9b0c33a9db069393fd",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      const trackerRef = ref(db, "familyTimeTracker");
+
+      const baseMembers = ["Mohammad", "Fadwa", "Alia", "Tasneem"];
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const rankEmojis = ["🏆", "🥈", "🥉", "👤"];
+      const colors = {
+        Mohammad: "#6366f1",
+        Fadwa: "#f472b6",
+        Alia: "#a78bfa",
+        Tasneem: "#ef4444",
+      };
+
+      let viewDate = new Date(); // Current date
+      const today = new Date(); // Reference for highlighting
+      let appData = {}; // Global store for tracker
+
+      // Helper: Convert YYYY-MM-DD to values this app uses
+      function getHoursForDay(name, year, month, day) {
+        const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        return appData[name]?.[dateKey]?.hours || 0;
+      }
+
+      function setHoursForDay(name, year, month, day, value) {
+        const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const path = `familyTimeTracker/${name}/${dateKey}`;
+        if (value === 0) {
+          remove(ref(db, path));
+        } else {
+          set(ref(db, path), { hours: value, notes: "" });
+        }
+      }
+
+      function init() {
+        // Listen for Tracker Data
+        onValue(trackerRef, (snapshot) => {
+          appData = snapshot.val() || {};
+          render();
+        });
+
+        setupNavigation();
+      }
+
+      function setupNavigation() {
+        document.getElementById("prevBtn").onclick = () => {
+          viewDate.setMonth(viewDate.getMonth() - 1);
+          render();
         };
+        document.getElementById("nextBtn").onclick = () => {
+          viewDate.setMonth(viewDate.getMonth() + 1);
+          render();
+        };
+      }
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const trackerRef = ref(db, 'familyTimeTracker');
+      function render() {
+        const y = viewDate.getFullYear(),
+          m = viewDate.getMonth(),
+          dC = new Date(y, m + 1, 0).getDate();
+        document.getElementById("monthDisplay").innerText =
+          viewDate.toLocaleString("default", {
+            month: "long",
+            year: "numeric",
+          });
 
-        const baseMembers = ['Mohammad', 'Fadwa', 'Alia', 'Tasneem'];
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const rankEmojis = ['🏆', '🥈', '🥉', '👤'];
-        const colors = { 'Mohammad': '#6366f1', 'Fadwa': '#f472b6', 'Alia': '#a78bfa', 'Tasneem': '#ef4444' };
-        
-
-
-        let viewDate = new Date(); // Current date
-        const today = new Date(); // Reference for highlighting
-        let appData = {}; // Global store for tracker
-
-        // Helper: Convert YYYY-MM-DD to values this app uses
-        function getHoursForDay(name, year, month, day) {
-            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            return appData[name]?.[dateKey]?.hours || 0;
+        const hR = document.getElementById("headerRow");
+        while (hR.children.length > 1) hR.removeChild(hR.lastChild);
+        const isCurrentMonth =
+          y === today.getFullYear() && m === today.getMonth();
+        for (let d = 1; d <= dC; d++) {
+          const th = document.createElement("th");
+          const isToday = isCurrentMonth && d === today.getDate();
+          if (isToday) th.classList.add("today-header");
+          th.innerHTML = `<div class="header-date-stack"><span class="text-[9px] font-black ${isToday ? "text-indigo-400" : "text-slate-700"} uppercase">${days[new Date(y, m, d).getDay()]}</span><span class="text-lg font-black ${isToday ? "text-indigo-300" : "text-slate-200"} leading-none">${d}</span></div>`;
+          hR.appendChild(th);
         }
+        const avgTh = document.createElement("th");
+        avgTh.className = "sticky-avg";
+        avgTh.innerHTML = `<div class="header-date-stack"><span class="text-[9px] font-black text-indigo-400 uppercase">AVG</span><span class="text-sm font-black text-indigo-300 leading-none">📊</span></div>`;
+        hR.appendChild(avgTh);
 
-        function setHoursForDay(name, year, month, day, value) {
-            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const path = `familyTimeTracker/${name}/${dateKey}`;
-            if (value === 0) {
-                remove(ref(db, path));
-            } else {
-                set(ref(db, path), { hours: value, notes: "" });
+        const pastDays = isCurrentMonth ? today.getDate() : dC;
+
+        const tbody = document.getElementById("memberRows");
+        tbody.innerHTML = "";
+        baseMembers.forEach((n, idx) => {
+          const tr = document.createElement("tr");
+          const rowHours = [];
+          for (let d = 1; d <= dC; d++)
+            rowHours.push(getHoursForDay(n, y, m, d));
+          const streak = rowHours.filter((v) => v >= 2).length;
+
+          tr.innerHTML = `<td class="sticky-name border-b border-slate-800/50 h-[80px]"><div class="flex items-center"><div class="flex flex-col"><span class="font-bold text-slate-200 text-sm" style="color: ${colors[n]}">${n}</span><span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">${streak} CONSISTENT DAYS</span></div></div></td>`;
+
+          for (let d = 1; d <= dC; d++) {
+            const val = getHoursForDay(n, y, m, d);
+            const isToday = isCurrentMonth && d === today.getDate();
+            const td = document.createElement("td");
+            td.className = `border-b border-slate-800/40 p-0.5 min-w-[38px] ${isToday ? "today-highlight" : ""}`;
+            const inp = document.createElement("input");
+            inp.type = "number";
+            inp.className = `log-input ${val > 0 ? "has-value" : ""}`;
+            inp.value = val || "";
+            inp.style.borderBottom =
+              val > 0 ? `2px solid ${colors[n]}` : "none";
+
+            inp.onchange = (e) => {
+              const v = parseFloat(e.target.value) || 0;
+              setHoursForDay(n, y, m, d, v);
+            };
+            td.appendChild(inp);
+            tr.appendChild(td);
+          }
+          const avgSum = rowHours.slice(0, pastDays).reduce((a, b) => a + b, 0);
+          const avg = pastDays > 0 ? (avgSum / pastDays).toFixed(1) : "0.0";
+          const avgTd = document.createElement("td");
+          avgTd.className = "sticky-avg border-b border-slate-800/40 p-0.5";
+          avgTd.innerHTML = `<div class="text-sm font-black" style="color: ${colors[n]}">${avg}h</div>`;
+          tr.appendChild(avgTd);
+          tbody.appendChild(tr);
+        });
+        renderAnalytics();
+        renderCalendar();
+      }
+
+      function renderAnalytics() {
+        const y = viewDate.getFullYear(),
+          m = viewDate.getMonth(),
+          dC = new Date(y, m + 1, 0).getDate();
+        const leaderboard = document.getElementById("liveLeaderboard");
+        leaderboard.innerHTML = "";
+
+        const totals = baseMembers
+          .map((n) => {
+            let sum = 0;
+            for (let d = 1; d <= dC; d++) sum += getHoursForDay(n, y, m, d);
+            return { name: n, total: sum };
+          })
+          .sort((a, b) => b.total - a.total);
+
+        totals.forEach((item, idx) => {
+          const card = document.createElement("div");
+          card.className = "rank-card";
+          card.innerHTML = `<span class="text-lg">${rankEmojis[idx] || "👤"}</span><div class="flex flex-col"><span class="text-[10px] font-black uppercase tracking-widest" style="color: ${colors[item.name]}">${item.name}</span><span class="text-[8px] font-bold text-slate-500 uppercase">${item.total.toFixed(1)} Total Hours</span></div>`;
+          leaderboard.appendChild(card);
+        });
+
+        const statsGrid = document.getElementById("personalStatsGrid");
+        statsGrid.innerHTML = "";
+        totals.forEach((item) => {
+          const box = document.createElement("div");
+          box.className = "stats-box";
+          box.style.borderLeft = `4px solid ${colors[item.name]}`;
+          box.innerHTML = `<div class="text-[8px] font-black uppercase tracking-widest mb-1" style="color: ${colors[item.name]}">${item.name}</div><div class="text-xl font-black text-white tracking-tighter">${item.total.toFixed(1)}h</div>`;
+          statsGrid.appendChild(box);
+        });
+
+        const chart = document.getElementById("totalHoursChart");
+        chart.innerHTML = "";
+        let maxDay = 0;
+        const dailyData = [];
+        for (let d = 1; d <= dC; d++) {
+          let daySum = 0;
+          baseMembers.forEach((n) => (daySum += getHoursForDay(n, y, m, d)));
+          dailyData.push(daySum);
+          if (daySum > maxDay) maxDay = daySum;
+        }
+        dailyData.forEach((v) => {
+          const bar = document.createElement("div");
+          bar.className = "bar";
+          bar.style.height = maxDay > 0 ? `${(v / maxDay) * 100}%` : "2px";
+          chart.appendChild(bar);
+        });
+
+        const cGrid = document.getElementById("consistencyGrid");
+        cGrid.innerHTML = "";
+        baseMembers.forEach((n) => {
+          const row = document.createElement("div");
+          row.className = "flex items-center gap-3";
+          row.innerHTML = `<div class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">${n}</div>`;
+          const cells = document.createElement("div");
+          cells.className = "flex-1 grid gap-1";
+          cells.style.gridTemplateColumns = `repeat(${dC}, 1fr)`;
+          let consistentDays = 0;
+          for (let d = 1; d <= dC; d++) {
+            const hasWork = getHoursForDay(n, y, m, d) >= 2;
+            if (hasWork) consistentDays++;
+            cells.innerHTML += `<div class="consistency-cell" style="background: ${hasWork ? colors[n] : "#1e293b"}"></div>`;
+          }
+          row.appendChild(cells);
+          const pct = Math.round((consistentDays / dC) * 100);
+          row.innerHTML += `<div class="w-14 text-right text-sm font-black" style="color: ${colors[n]}">${pct}%</div>`;
+          cGrid.appendChild(row);
+        });
+      }
+
+      function renderCalendar() {
+        const y = viewDate.getFullYear(),
+          m = viewDate.getMonth(),
+          dC = new Date(y, m + 1, 0).getDate(),
+          fD = new Date(y, m, 1).getDay();
+        const isCurrentMonth =
+          y === today.getFullYear() && m === today.getMonth();
+        const grid = document.getElementById("calendarGrid");
+        grid.innerHTML = "";
+        days.forEach(
+          (d) =>
+            (grid.innerHTML += `<div class="text-center text-[10px] font-black text-slate-700 uppercase mb-4">${d}</div>`),
+        );
+        for (let i = 0; i < fD; i++)
+          grid.appendChild(document.createElement("div"));
+        for (let d = 1; d <= dC; d++) {
+          const isToday = isCurrentMonth && d === today.getDate();
+          const card = document.createElement("div");
+          card.className = `calendar-card ${isToday ? "today-highlight" : ""}`;
+          card.innerHTML = `<span class="absolute top-2 left-2 text-[10px] font-black ${isToday ? "text-indigo-400" : "text-slate-700"}">${d}</span>`;
+          let max = 0,
+            winners = [];
+          baseMembers.forEach((n) => {
+            const h = getHoursForDay(n, y, m, d);
+            if (h > max) {
+              max = h;
+              winners = [n];
+            } else if (h > 0 && h === max) {
+              winners.push(n);
             }
+          });
+          if (max > 0) {
+            card.classList.add("calendar-winner");
+            card.style.borderColor =
+              winners.length === 1 ? colors[winners[0]] : "#6366f1";
+            card.innerHTML += `<div class="text-xl mb-1">👑</div><div class="text-[8px] font-black text-white uppercase">${winners.length > 1 ? "TIE" : winners[0]}</div>`;
+          }
+          grid.appendChild(card);
         }
+      }
 
-
-
-        function init() {
-            // Listen for Tracker Data
-            onValue(trackerRef, (snapshot) => {
-                appData = snapshot.val() || {};
-                render();
-            });
-
-            setupNavigation();
-        }
-
-        function setupNavigation() {
-            document.getElementById('prevBtn').onclick = () => { viewDate.setMonth(viewDate.getMonth() - 1); render(); };
-            document.getElementById('nextBtn').onclick = () => { viewDate.setMonth(viewDate.getMonth() + 1); render(); };
-        }
-
-        function render() {
-            const y = viewDate.getFullYear(), m = viewDate.getMonth(), dC = new Date(y, m + 1, 0).getDate();
-            document.getElementById('monthDisplay').innerText = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-            
-            const hR = document.getElementById('headerRow'); while (hR.children.length > 1) hR.removeChild(hR.lastChild);
-            const isCurrentMonth = y === today.getFullYear() && m === today.getMonth();
-            for (let d = 1; d <= dC; d++) {
-                const th = document.createElement('th');
-                const isToday = isCurrentMonth && d === today.getDate();
-                if (isToday) th.classList.add('today-header');
-                th.innerHTML = `<div class="header-date-stack"><span class="text-[9px] font-black ${isToday ? 'text-indigo-400' : 'text-slate-700'} uppercase">${days[new Date(y, m, d).getDay()]}</span><span class="text-lg font-black ${isToday ? 'text-indigo-300' : 'text-slate-200'} leading-none">${d}</span></div>`;
-                hR.appendChild(th);
-            }
-
-            const tbody = document.getElementById('memberRows'); tbody.innerHTML = '';
-            baseMembers.forEach((n, idx) => {
-                const tr = document.createElement('tr');
-                const rowHours = [];
-                for(let d=1; d<=dC; d++) rowHours.push(getHoursForDay(n, y, m, d));
-                const streak = rowHours.filter(v => v >= 2).length;
-
-                tr.innerHTML = `<td class="sticky-name border-b border-slate-800/50 h-[80px]"><div class="flex items-center"><div class="flex flex-col"><span class="font-bold text-slate-200 text-sm" style="color: ${colors[n]}">${n}</span><span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">${streak} CONSISTENT DAYS</span></div></div></td>`;
-                
-                for (let d = 1; d <= dC; d++) {
-                    const val = getHoursForDay(n, y, m, d);
-                    const isToday = isCurrentMonth && d === today.getDate();
-                    const td = document.createElement('td'); td.className = `border-b border-slate-800/40 p-1 min-w-[50px] ${isToday ? 'today-highlight' : ''}`;
-                    const inp = document.createElement('input'); 
-                    inp.type = "number"; 
-                    inp.className = `log-input ${val > 0 ? 'has-value' : ''}`;
-                    inp.value = val || '';
-                    inp.style.borderBottom = val > 0 ? `2px solid ${colors[n]}` : 'none';
-                    
-                    inp.onchange = (e) => {
-                        const v = parseFloat(e.target.value) || 0;
-                        setHoursForDay(n, y, m, d, v);
-                    };
-                    td.appendChild(inp); tr.appendChild(td);
-                }
-                tbody.appendChild(tr);
-            });
-            renderAnalytics();
-            renderCalendar();
-        }
-
-        function renderAnalytics() {
-            const y = viewDate.getFullYear(), m = viewDate.getMonth(), dC = new Date(y, m + 1, 0).getDate();
-            const leaderboard = document.getElementById('liveLeaderboard'); leaderboard.innerHTML = '';
-            
-            const totals = baseMembers.map(n => {
-                let sum = 0;
-                for(let d=1; d<=dC; d++) sum += getHoursForDay(n, y, m, d);
-                return { name: n, total: sum };
-            }).sort((a,b) => b.total - a.total);
-
-            totals.forEach((item, idx) => {
-                const card = document.createElement('div'); card.className = "rank-card";
-                card.innerHTML = `<span class="text-lg">${rankEmojis[idx] || '👤'}</span><div class="flex flex-col"><span class="text-[10px] font-black uppercase tracking-widest" style="color: ${colors[item.name]}">${item.name}</span><span class="text-[8px] font-bold text-slate-500 uppercase">${item.total.toFixed(1)} Total Hours</span></div>`;
-                leaderboard.appendChild(card);
-            });
-
-            const statsGrid = document.getElementById('personalStatsGrid'); statsGrid.innerHTML = '';
-            totals.forEach(item => {
-                const box = document.createElement('div'); box.className = "stats-box"; box.style.borderLeft = `4px solid ${colors[item.name]}`;
-                box.innerHTML = `<div class="text-[8px] font-black uppercase tracking-widest mb-1" style="color: ${colors[item.name]}">${item.name}</div><div class="text-xl font-black text-white tracking-tighter">${item.total.toFixed(1)}h</div>`;
-                statsGrid.appendChild(box);
-            });
-
-            const chart = document.getElementById('totalHoursChart'); chart.innerHTML = '';
-            let maxDay = 0;
-            const dailyData = [];
-            for(let d=1; d<=dC; d++) {
-                let daySum = 0;
-                baseMembers.forEach(n => daySum += getHoursForDay(n, y, m, d));
-                dailyData.push(daySum);
-                if(daySum > maxDay) maxDay = daySum;
-            }
-            dailyData.forEach(v => {
-                const bar = document.createElement('div'); bar.className = "bar"; 
-                bar.style.height = maxDay > 0 ? `${(v/maxDay)*100}%` : '2px';
-                chart.appendChild(bar);
-            });
-
-            const cGrid = document.getElementById('consistencyGrid'); cGrid.innerHTML = '';
-            baseMembers.forEach(n => {
-                const row = document.createElement('div'); row.className = "flex items-center gap-3";
-                row.innerHTML = `<div class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">${n}</div>`;
-                const cells = document.createElement('div'); cells.className = "flex-1 grid gap-1";
-                cells.style.gridTemplateColumns = `repeat(${dC}, 1fr)`;
-                for(let d=1; d<=dC; d++) {
-                    const hasWork = getHoursForDay(n, y, m, d) >= 2;
-                    cells.innerHTML += `<div class="consistency-cell" style="background: ${hasWork ? colors[n] : '#1e293b'}"></div>`;
-                }
-                row.appendChild(cells); cGrid.appendChild(row);
-            });
-        }
-
-        function renderCalendar() {
-            const y = viewDate.getFullYear(), m = viewDate.getMonth(), dC = new Date(y, m + 1, 0).getDate(), fD = new Date(y, m, 1).getDay();
-            const isCurrentMonth = y === today.getFullYear() && m === today.getMonth();
-            const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
-            days.forEach(d => grid.innerHTML += `<div class="text-center text-[10px] font-black text-slate-700 uppercase mb-4">${d}</div>`);
-            for (let i = 0; i < fD; i++) grid.appendChild(document.createElement('div'));
-            for (let d = 1; d <= dC; d++) {
-                const isToday = isCurrentMonth && d === today.getDate();
-                const card = document.createElement('div'); card.className = `calendar-card ${isToday ? 'today-highlight' : ''}`; 
-                card.innerHTML = `<span class="absolute top-2 left-2 text-[10px] font-black ${isToday ? 'text-indigo-400' : 'text-slate-700'}">${d}</span>`;
-                let max = 0, winners = [];
-                baseMembers.forEach(n => {
-                    const h = getHoursForDay(n, y, m, d);
-                    if(h > max) { max = h; winners = [n]; } else if (h > 0 && h === max) { winners.push(n); }
-                });
-                if(max > 0) {
-                    card.classList.add('calendar-winner');
-                    card.style.borderColor = winners.length === 1 ? colors[winners[0]] : '#6366f1';
-                    card.innerHTML += `<div class="text-xl mb-1">👑</div><div class="text-[8px] font-black text-white uppercase">${winners.length > 1 ? 'TIE' : winners[0]}</div>`;
-                }
-                grid.appendChild(card);
-            }
-        }
-
-
-
-        init();
+      init();
     </script>
-</body>
+  </body>
 </html>
