@@ -566,6 +566,11 @@
         onValue,
         remove,
       } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+      import {
+        getAuth,
+        signInAnonymously,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
       // Firebase Configuration (Same as RPG Tracker)
       const firebaseConfig = {
@@ -581,6 +586,7 @@
 
       const app = initializeApp(firebaseConfig);
       const db = getDatabase(app);
+      const auth = getAuth(app);
       const trackerRef = ref(db, "familyTimeTracker");
 
       const baseMembers = ["Mohammad", "Fadwa", "Alia", "Tasneem"];
@@ -614,10 +620,25 @@
       }
 
       function init() {
-        // Listen for Tracker Data
-        onValue(trackerRef, (snapshot) => {
-          appData = snapshot.val() || {};
-          render();
+        // Require a signed-in session before touching the database.
+        // Paired with database rules that check `auth != null`, this
+        // keeps casual scrapers/bots (which just hit the REST API with
+        // no credentials) from reading or writing your data.
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            // Listen for Tracker Data
+            onValue(trackerRef, (snapshot) => {
+              appData = snapshot.val() || {};
+              render();
+            });
+          }
+        });
+
+        signInAnonymously(auth).catch((err) => {
+          console.error("Auth failed:", err);
+          alert(
+            "Could not connect securely to the database. Check your internet connection or try again.",
+          );
         });
 
         setupNavigation();
