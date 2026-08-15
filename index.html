@@ -300,6 +300,16 @@ svg text{font-family:var(--mono);font-size:10px;fill:var(--muted)}
       <p class="note" id="syncNote">Nothing is sent anywhere until you add a link.</p>
     </div>
 
+    <div class="card">
+      <h2>Diagnostics</h2>
+      <p class="sub">Compare these numbers on both devices. If they don't match, you're not on the same sheet.</p>
+      <div class="tiles" id="diag"></div>
+      <div class="champbar" style="margin:14px 0 0">
+        <button class="btn" id="forceFull">Force a full re-sync on this device</button>
+      </div>
+      <p class="note">Entries in sheet should read the same number on every device within 15 seconds. If one device shows a smaller number, it's talking to a different spreadsheet or a different deployment.</p>
+    </div>
+
     <div class="card" id="setupCard">
       <h2>Set up the sheet</h2>
       <p class="sub">Ten minutes, once. After that it just runs.</p>
@@ -488,7 +498,7 @@ function doPost(e) {
     for (var z = 1; z < rows.length; z++) {
       if ((Number(rows[z][7]) || 0) > since) {
         entries.push({
-          month: rows[z][1], person: rows[z][2], day: Number(rows[z][3]),
+          month: monthOf(rows[z]), person: rows[z][2], day: Number(rows[z][3]),
           value: rows[z][4] === '' ? null : Number(rows[z][4]),
           updatedAt: Number(rows[z][5]) || 0, by: rows[z][6]
         });
@@ -506,6 +516,10 @@ function doPost(e) {
   }
 }
 
+function monthOf(row) {
+  return String(row[0]).split('|')[0];
+}
+
 function dataSheet(ss) {
   var sh = ss.getSheetByName(DATA);
   if (!sh) {
@@ -513,6 +527,8 @@ function dataSheet(ss) {
     sh.appendRow(['key', 'month', 'person', 'day', 'value', 'updatedAt', 'by', 'seq']);
     sh.setFrozenRows(1);
   }
+  // Sheets turns "2026-08" into a date unless these columns are plain text.
+  sh.getRange(1, 1, sh.getMaxRows(), 2).setNumberFormat('@');
   return sh;
 }
 
@@ -535,7 +551,7 @@ function rebuildMonth(ss, month, rows, names) {
   var map = {};
   var seen = {};
   for (var i = 1; i < rows.length; i++) {
-    if (rows[i][1] === month) {
+    if (monthOf(rows[i]) === month) {
       map[rows[i][2] + '|' + Number(rows[i][3])] = rows[i][4];
       seen[rows[i][2]] = true;
     }
@@ -1014,6 +1030,28 @@ function renderSettings(){
 
 /* ---------------- sync ---------------- */
 var syncing = false, lastSyncAt = 0, syncErr = null, timer = null;
+var lastInfo = {count:null, received:null, seq:null};
+function renderDiag(){
+  var box = $("#diag");
+  if (!box) return;
+  var u = state.sync.url || "";
+  var tail = u ? "…" + u.slice(-14) : "not set";
+  var rows = [
+    ["Entries in sheet", lastInfo.count === null ? "—" : String(lastInfo.count), "must match on all devices"],
+    ["Sheet version", lastInfo.seq === null ? "—" : String(lastInfo.seq), "counts every write ever made"],
+    ["Pulled last sync", lastInfo.received === null ? "—" : String(lastInfo.received), "new rows this device received"],
+    ["Waiting to send", String(dirtyCount()), dirtyCount() ? "not in the sheet yet" : "nothing pending"],
+    ["Logging as", (function(){
+      var p = state.people.find(function(x){ return x.id === state.sync.me; });
+      return p ? p.name : "nobody";
+    })(), "shown in the sheet's 'by' column"],
+    ["Link ending", tail, "same on every device?"]
+  ];
+  box.innerHTML = rows.map(function(t){
+    return "<div class='tile'><div class='k'>" + t[0] + "</div><div class='v' style='font-size:18px'>" +
+      esc(t[1]) + "</div><div class='n'>" + t[2] + "</div></div>";
+  }).join("");
+}
 function dirtyCount(){ return Object.keys(state.dirty).length; }
 function connected(){ return !!state.sync.url; }
 function renderSyncUI(){
@@ -1038,6 +1076,7 @@ function renderSyncUI(){
         : (syncing ? "Talking to the sheet…"
           : (dirtyCount() ? dirtyCount() + " entries queued for the sheet." : "Everything on this device matches the sheet."))));
   }
+  renderDiag();
 }
 function dirtyList(){
   return Object.keys(state.dirty).map(function(k){
@@ -1055,9 +1094,11 @@ function configList(){
     {key:"goal", value: state.config.goal, updatedAt: state.configMeta.goal || 0}
   ];
 }
+function validMonth(s){ return /^\d{4}-\d{2}$/.test(String(s)); }
 function applyRemote(data){
   var changedMonths = false;
   (data.entries || []).forEach(function(e){
+    if (!validMonth(e.month)) return;
     if (e.updatedAt > metaOf(e.month, e.person, e.day)){
       writeVal(e.month, e.person, e.day, e.value === null ? null : Number(e.value), e.updatedAt);
       changedMonths = true;
@@ -1098,6 +1139,9 @@ function syncNow(manual){
       if (state.dirty[k] && state.dirty[k].updatedAt <= c.updatedAt) delete state.dirty[k];
     });
     var changed = applyRemote(data);
+    lastInfo = {count: (data.count === undefined ? null : data.count),
+                received: (data.entries || []).length,
+                seq: (data.now === undefined ? null : data.now)};
     state.sync.lastPull = data.now || state.sync.lastPull;
     syncErr = null; lastSyncAt = Date.now();
     persist();
@@ -1286,6 +1330,12 @@ $("#connectBtn").onclick = function(){
 $("#syncMe").onchange = function(){ state.sync.me = this.value; persist(); };
 $("#syncAuto").onchange = function(){ state.sync.auto = Number(this.value); persist(); renderSyncFields(); scheduleSync(); };
 $("#syncSecret").oninput = function(){ state.sync.secret = this.value.trim(); persist(); };
+$("#forceFull").onclick = function(){
+  if (!connected()){ toast("Not connected yet"); return; }
+  state.sync.lastPull = 0; state.meta = {};
+  persist();
+  syncNow(true).then(function(){ refreshGridValues(); renderDerived(); renderSettings(); });
+};
 $("#pullAll").onclick = function(){
   if (!connected()){ toast("Connect first"); return; }
   state.sync.lastPull = 0; state.meta = {};
@@ -1372,6 +1422,13 @@ store.load().then(function(saved){
     state.sync = Object.assign({url:"",secret:"",me:"",auto:1,lastPull:0}, saved.sync || {});
   }
   document.documentElement.setAttribute("data-theme", state.config.theme || "light");
+  // Older builds filed rows under date-mangled month keys — drop them and re-pull.
+  var junk = Object.keys(state.months).filter(function(k){ return !validMonth(k); });
+  if (junk.length){
+    junk.forEach(function(k){ delete state.months[k]; delete state.meta[k]; });
+    state.sync.lastPull = 0;
+    state.meta = {};
+  }
   if (isLocked()){
     state.sync.url = BUILT_IN_URL;
     ["people","high","low","unit","goal"].forEach(function(k){ if (!state.configMeta[k]) touchConfig(k); });
