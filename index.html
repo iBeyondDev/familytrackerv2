@@ -1,843 +1,1389 @@
-<!doctype html>
-<html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Family Tracker 2026 (Sync Mode)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monthly Consistency Tracker</title>
+<style>
+:root{
+  --paper:#e9edf1; --surface:#ffffff; --surface-2:#f4f7f9;
+  --line:#d7dee4; --line-soft:#e8edf1;
+  --ink:#141a20; --muted:#67757f;
+  --accent:#17607a; --accent-soft:#dfeef3;
+  --gold:#c98a12; --gold-soft:#fbf0d6;
+  --warn:#b03a55;
+  --l0:#dde3e8; --l1:#e2f0c9; --l2:#b8dd87; --l3:#63a83f; --l4:#2f7a37; --l3-ink:#ffffff;
+  --p1:#17607a; --p2:#c2681c; --p3:#6a4fa3; --p4:#b03a55;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(20,26,32,.06), 0 8px 24px -16px rgba(20,26,32,.28);
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+html[data-theme="dark"]{
+  --paper:#10161b; --surface:#182027; --surface-2:#1e272f;
+  --line:#2c3843; --line-soft:#232e37;
+  --ink:#e8eef2; --muted:#93a4b0;
+  --accent:#54b6d4; --accent-soft:#173540;
+  --gold:#e8b13f; --gold-soft:#3a2f14; --warn:#e2748c;
+  --l0:#25313a; --l1:#33472c; --l2:#4c7a3a; --l3:#69ad46; --l4:#8fd35f; --l3-ink:#0e1418;
+  --p1:#54b6d4; --p2:#e59a4a; --p3:#a58ae0; --p4:#e2748c;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 72px}
+header.top{position:sticky;top:0;z-index:30;background:var(--paper);border-bottom:1px solid var(--line)}
+.top-inner{max-width:1180px;margin:0 auto;padding:14px 16px 0}
+.brandrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+h1{margin:0;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+h1 .dot{color:var(--accent)}
+.pill{
+  margin-left:auto;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);
+  border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;cursor:pointer;
+}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--muted);display:block;flex:none}
+.pill.ok i{background:var(--l3)}
+.pill.busy i{background:var(--gold)}
+.pill.err i{background:var(--warn)}
+.monthbar{display:flex;align-items:center;gap:8px;margin:12px 0 10px;flex-wrap:wrap}
+.mlabel{font-family:var(--mono);font-size:20px;font-weight:600;letter-spacing:-.02em;min-width:190px}
+.mlabel small{display:block;font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-weight:500}
+button,select,input,textarea{font-family:inherit;font-size:14px;color:inherit}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 12px;cursor:pointer;transition:.14s;font-weight:500}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.icon{padding:7px 11px;font-family:var(--mono)}
+.btn.ghost{background:transparent}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{opacity:.9;color:#fff}
+.btn.danger{color:var(--warn);border-color:var(--warn)}
+.spacer{flex:1}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:9px 13px;cursor:pointer;color:var(--muted);font-weight:600;font-size:13px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-top:18px}
+.card > h2{margin:0 0 3px;font-size:12px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);font-weight:700}
+.card > .sub{margin:0 0 16px;font-size:13px;color:var(--muted)}
+.panel[hidden]{display:none}
+.scroller{overflow-x:auto;border:1px solid var(--line-soft);border-radius:10px;background:var(--surface-2)}
+table{border-collapse:separate;border-spacing:0;width:100%}
+th,td{padding:0;text-align:center}
+thead th{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--muted);padding:8px 0 7px;border-bottom:1px solid var(--line);background:var(--surface-2);position:sticky;top:0;z-index:5;min-width:44px}
+thead th.wk{color:var(--accent)}
+thead th.today{color:var(--ink);background:var(--accent-soft)}
+th.name,td.name{position:sticky;left:0;z-index:6;background:var(--surface-2);text-align:left;padding:6px 12px;min-width:132px;border-right:1px solid var(--line);font-size:13.5px;font-weight:600}
+thead th.name{z-index:8}
+td.name{border-bottom:1px solid var(--line-soft)}
+.swatch{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:8px;vertical-align:middle}
+td.cellwrap{border-bottom:1px solid var(--line-soft);border-left:1px solid var(--line-soft)}
+input.cell{width:100%;min-width:44px;border:0;background:transparent;text-align:center;padding:9px 2px;font-family:var(--mono);font-size:13.5px;font-weight:600;-moz-appearance:textfield}
+input.cell::-webkit-outer-spin-button,input.cell::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input.cell:focus{outline:2px solid var(--accent);outline-offset:-2px;background:var(--surface)}
+input.cell.v0{color:var(--muted)}
+input.cell.v1{background:var(--l1)}
+input.cell.v2{background:var(--l2)}
+input.cell.v3{background:var(--l3);color:var(--l3-ink)}
+input.cell.v4{background:var(--l4);color:var(--l3-ink)}
+tr.teamrow td{background:var(--surface-2);font-family:var(--mono);font-size:12px;color:var(--muted);padding:7px 0;border-top:1px solid var(--line)}
+tr.teamrow td.name{font-family:var(--sans);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+table.summary{width:100%;margin-top:6px}
+table.summary th{text-align:right;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.summary th:first-child{text-align:left}
+table.summary td{text-align:right;padding:10px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:13.5px;white-space:nowrap}
+table.summary td:first-child{text-align:left;font-family:var(--sans);font-weight:600}
+table.summary tr:last-child td{border-bottom:0}
+.bar{height:6px;border-radius:4px;background:var(--l0);overflow:hidden;min-width:64px;margin-top:5px}
+.bar i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+.heat{display:grid;gap:12px}
+.heatrow{display:grid;grid-template-columns:126px 1fr;gap:12px;align-items:center}
+.heatrow .who{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.heatrow .who .pct{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.strip{display:flex;gap:3px;overflow-x:auto;padding-bottom:2px}
+.sq{flex:1 0 20px;height:30px;border-radius:5px;background:var(--l0);position:relative;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);cursor:pointer}
+.sq.v1{background:var(--l1);color:var(--ink)}
+.sq.v2{background:var(--l2);color:var(--ink)}
+.sq.v3{background:var(--l3);color:var(--l3-ink)}
+.sq.v4{background:var(--l4);color:var(--l3-ink)}
+.sq.crown::after{content:"";position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 1.5px var(--surface)}
+.sq.sel{outline:2px solid var(--ink);outline-offset:1px}
+.daynums{display:flex;gap:3px;margin-left:138px;margin-bottom:2px}
+.daynums span{flex:1 0 20px;text-align:center;font-family:var(--mono);font-size:9.5px;color:var(--muted)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:16px;font-size:12.5px;color:var(--muted)}
+.legend b{display:inline-block;width:13px;height:13px;border-radius:4px;margin-right:7px;vertical-align:-2px}
+.champbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.champbar .day{font-family:var(--mono);font-weight:600;font-size:15px;min-width:150px}
+.podium{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.pod{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:3px;position:relative;overflow:hidden}
+.pod.win{border-color:var(--gold);background:var(--gold-soft)}
+.pod .rank{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.pod .nm{font-weight:700;font-size:15px}
+.pod .val{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-.02em}
+.pod .tagline2{font-size:11.5px;color:var(--muted)}
+.crown{position:absolute;top:10px;right:12px;font-size:17px}
+.empty{color:var(--muted);font-size:13.5px;padding:14px;border:1px dashed var(--line);border-radius:10px;text-align:center}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:var(--surface-2)}
+.tile .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:700}
+.tile .v{font-family:var(--mono);font-size:23px;font-weight:700;letter-spacing:-.02em;margin-top:3px}
+.tile .n{font-size:11.5px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;background:var(--surface-2);display:flex;gap:7px;align-items:center}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+label.f input,label.f select{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--surface);font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink)}
+label.f.wide{grid-column:1/-1}
+.note{font-size:12.5px;color:var(--muted);margin-top:14px}
+.syncstate{display:flex;align-items:center;gap:9px;font-size:13px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);margin-bottom:14px}
+.syncstate i{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.syncstate.ok i{background:var(--l3)}
+.syncstate.busy i{background:var(--gold)}
+.syncstate.err i{background:var(--warn)}
+ol.steps{margin:0;padding-left:20px;font-size:13.5px}
+ol.steps li{margin-bottom:9px}
+ol.steps code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px}
+pre.code{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:13px;overflow:auto;max-height:300px;font-family:var(--mono);font-size:11.5px;line-height:1.5;margin:12px 0 0;white-space:pre}
+svg .gline{stroke:var(--line-soft)}
+svg text{font-family:var(--mono);font-size:10px;fill:var(--muted)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.22s;z-index:99;max-width:88vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (max-width:640px){
+  .heatrow{grid-template-columns:1fr;gap:5px}
+  .daynums{display:none}
+  .mlabel{min-width:150px;font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  header.top{position:static}.tabs,.btn,.pill{display:none!important}
+  .card{break-inside:avoid;box-shadow:none}body{background:#fff}
+  .panel[hidden]{display:block!important}
+}
+</style>
+</head>
+<body>
 
-      body {
-        font-family: "Plus Jakarta Sans", sans-serif;
-        background-color: #020617;
-        color: #f1f5f9;
-        -webkit-tap-highlight-color: transparent;
-      }
+<header class="top">
+  <div class="top-inner">
+    <div class="brandrow">
+      <h1>Consistency<span class="dot">.</span>Tracker</h1>
+      <button class="pill" id="syncPill" title="Sync with the sheet"><i></i><span>Not connected</span></button>
+    </div>
+    <div class="monthbar">
+      <button class="btn icon" id="prevM" title="Previous month">&larr;</button>
+      <div class="mlabel"><span id="mName">—</span><small id="mMeta">—</small></div>
+      <button class="btn icon" id="nextM" title="Next month">&rarr;</button>
+      <button class="btn ghost" id="todayBtn">This month</button>
+      <div class="spacer"></div>
+      <button class="btn icon" id="themeBtn" title="Toggle dark mode">◐</button>
+      <button class="btn ghost" id="printBtn">Print</button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-panel="p-table" aria-selected="true">Monthly table</button>
+      <button class="tab" role="tab" data-panel="p-heat" aria-selected="false">Consistency</button>
+      <button class="tab" role="tab" data-panel="p-stats" aria-selected="false">Standings</button>
+      <button class="tab" role="tab" data-panel="p-trend" aria-selected="false">Trends</button>
+      <button class="tab" role="tab" data-panel="p-sync" aria-selected="false">Sheet sync</button>
+      <button class="tab" role="tab" data-panel="p-set" aria-selected="false">Settings</button>
+    </div>
+  </div>
+</header>
 
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
+<div class="wrap">
 
-      /* Table Architecture */
-      .table-wrapper {
-        position: relative;
-        border-radius: 1.5rem;
-        border: 1px solid #1e293b;
-        background: #0f172a;
-        overflow: hidden;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      }
+  <section class="panel" id="p-table">
+    <div class="card">
+      <h2>Monthly table</h2>
+      <p class="sub" id="tableSub">Type a number in any day. Arrow keys move between cells; every entry goes to the sheet.</p>
+      <div class="scroller"><table id="grid"></table></div>
+    </div>
+    <div class="card">
+      <h2>Totals &amp; averages</h2>
+      <p class="sub">Average per day counts every day of the month. Average per active day only counts days with an entry.</p>
+      <div class="scroller"><table class="summary" id="summary"></table></div>
+    </div>
+  </section>
 
-      .scroll-container {
-        overflow-x: auto;
-        overflow-y: hidden;
-      }
-      table {
-        border-collapse: separate;
-        border-spacing: 0;
-        width: 100%;
-      }
-
-      .sticky-name {
-        position: sticky;
-        left: 0;
-        z-index: 40;
-        background: #0f172a;
-        min-width: 100px;
-        padding: 0 0.75rem;
-        border-right: 1px solid #1e293b;
-        text-align: left;
-      }
-
-      .sticky-avg {
-        position: sticky;
-        right: 0;
-        z-index: 40;
-        background: #0f172a;
-        min-width: 55px;
-        border-left: 1px solid #1e293b;
-        text-align: center;
-      }
-
-      th {
-        height: 75px;
-        background: #0f172a;
-        border-bottom: 1px solid #1e293b;
-        vertical-align: middle;
-      }
-      .header-date-stack {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-width: 45px;
-        gap: 1px;
-      }
-
-      .log-input {
-        width: 100%;
-        height: 36px;
-        background: rgba(30, 41, 59, 0.3);
-        border: 1px solid transparent;
-        border-radius: 0.5rem;
-        outline: none;
-        text-align: center;
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #f1f5f9;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        appearance: none;
-        -moz-appearance: textfield;
-      }
-
-      .log-input::-webkit-outer-spin-button,
-      .log-input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-
-      .log-input.has-value {
-        background: rgba(30, 41, 59, 0.8);
-        color: #818cf8;
-      }
-      .winner-cell-bg {
-        background-color: rgba(234, 179, 8, 0.15) !important;
-        color: #fcd34d !important;
-      }
-
-      /* Speech Bubble */
-      .speech-bubble {
-        position: relative;
-        background: #ffffff;
-        border-radius: 1.25rem;
-        padding: 0.75rem 1rem;
-        color: #1e293b;
-        font-size: 0.75rem;
-        font-weight: 700;
-        line-height: 1.2;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        max-width: 180px;
-        text-align: center;
-      }
-      .speech-bubble::after {
-        content: "";
-        position: absolute;
-        bottom: -8px;
-        left: 50%;
-        transform: translateX(-50%);
-        border-width: 8px 8px 0;
-        border-style: solid;
-        border-color: #ffffff transparent transparent;
-      }
-
-      /* Animations */
-      @keyframes breathe {
-        0%,
-        100% {
-          transform: scale(1);
-        }
-        50% {
-          transform: scale(1.04);
-        }
-      }
-      @keyframes blink {
-        0%,
-        90%,
-        100% {
-          transform: scaleY(1);
-        }
-        95% {
-          transform: scaleY(0.1);
-        }
-      }
-      @keyframes float {
-        0%,
-        100% {
-          transform: translateY(0px);
-        }
-        50% {
-          transform: translateY(-10px);
-        }
-      }
-      @keyframes heartPop {
-        0% {
-          opacity: 0;
-          transform: scale(0.5);
-        }
-        50% {
-          opacity: 1;
-        }
-        100% {
-          transform: scale(1.5) translateY(-20px);
-          opacity: 0;
-        }
-      }
-
-      .pet-animate-breathe {
-        animation: breathe 3s ease-in-out infinite;
-      }
-      .pet-animate-float {
-        animation: float 4s ease-in-out infinite;
-      }
-      .eye-blink {
-        transform-origin: center;
-        animation: blink 4s infinite;
-      }
-      .heart-particle {
-        animation: heartPop 2s infinite;
-      }
-
-      .pet-card {
-        background: linear-gradient(145deg, #1e293b, #020617);
-        border: 1px solid #334155;
-        border-radius: 3rem;
-        padding: 2rem 1.5rem;
-        transition: all 0.4s ease;
-        position: relative;
-        box-shadow: 0 15px 45px -15px rgba(0, 0, 0, 0.7);
-      }
-
-      .coin-jar {
-        width: 70px;
-        height: 100px;
-        background: rgba(255, 255, 255, 0.02);
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-top: 4px solid rgba(255, 255, 255, 0.15);
-        border-radius: 0.5rem 0.5rem 1.5rem 1.5rem;
-        position: relative;
-        display: flex;
-        flex-direction: column-reverse;
-        align-items: center;
-        padding: 4px;
-        overflow: hidden;
-        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
-      }
-      .coin {
-        width: 50px;
-        height: 7px;
-        background: linear-gradient(to right, #fbbf24, #f59e0b);
-        border: 1px solid #92400e;
-        border-radius: 10px;
-        margin-bottom: 2px;
-        flex-shrink: 0;
-        animation: dropCoin 0.4s ease-out forwards;
-      }
-      @keyframes dropCoin {
-        from {
-          transform: translateY(-100px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-
-      .pet-svg-container {
-        width: 160px;
-        height: 160px;
-        margin-bottom: 0.5rem;
-        position: relative;
-      }
-      .sick-pet-overlay {
-        filter: grayscale(0.5) sepia(0.2) brightness(0.7);
-      }
-      .ghost-pet-overlay {
-        filter: grayscale(1) contrast(0.5) opacity(0.3) blur(1px);
-      }
-
-      .calendar-card {
-        background: #1e293b66;
-        border: 1px solid #334155;
-        aspect-ratio: 1/1;
-        border-radius: 0.75rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-      }
-      .calendar-winner {
-        background: #6366f1;
-        border: 1px solid #818cf8;
-        box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
-      }
-
-      /* Chart Styling */
-      .bar-container {
-        height: 100px;
-        display: flex;
-        align-items: flex-end;
-        gap: 2px;
-        padding-bottom: 4px;
-      }
-      .bar {
-        flex: 1;
-        background: #334155;
-        border-radius: 2px 2px 0 0;
-        transition:
-          height 0.5s ease,
-          background 0.3s ease;
-        position: relative;
-      }
-      .bar:hover {
-        background: #6366f1;
-      }
-      .bar:hover::after {
-        content: attr(data-value) "h";
-        position: absolute;
-        top: -20px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 8px;
-        font-weight: 800;
-        color: #6366f1;
-      }
-
-      .consistency-cell {
-        width: 100%;
-        aspect-ratio: 1/1;
-        border-radius: 4px;
-        background: #1e293b;
-        transition: all 0.3s ease;
-      }
-
-      /* Stats Boxes */
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-      }
-      .stats-box {
-        background: rgba(15, 23, 42, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 1.25rem;
-        padding: 0.75rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-      }
-
-      /* Leaderboard Styling */
-      .rank-card {
-        background: rgba(15, 23, 42, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.03);
-        border-radius: 1rem;
-        padding: 0.75rem 1rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        transition: transform 0.3s ease;
-      }
-      .rank-card:hover {
-        transform: translateX(5px);
-        background: rgba(15, 23, 42, 0.6);
-      }
-
-      /* Today Highlight */
-      .today-highlight {
-        background: linear-gradient(
-          135deg,
-          rgba(99, 102, 241, 0.3),
-          rgba(139, 92, 246, 0.2)
-        ) !important;
-        box-shadow:
-          inset 0 0 0 2px #6366f1,
-          0 0 20px rgba(99, 102, 241, 0.3);
-      }
-      .today-header {
-        background: linear-gradient(
-          135deg,
-          rgba(99, 102, 241, 0.4),
-          rgba(139, 92, 246, 0.3)
-        ) !important;
-        position: relative;
-      }
-      .today-header::after {
-        content: "TODAY";
-        position: absolute;
-        bottom: 4px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 6px;
-        font-weight: 900;
-        color: #818cf8;
-        letter-spacing: 0.1em;
-      }
-    </style>
-  </head>
-  <body class="p-4 md:p-10 pb-20">
-    <div class="max-w-[1600px] mx-auto">
-      <header
-        class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6"
-      >
-        <div class="flex items-center gap-4">
-          <div
-            class="h-16 w-16 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-8 w-8 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2.5"
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-          </div>
-          <div>
-            <h1
-              class="text-4xl font-black text-white tracking-tighter uppercase"
-              id="pageTitle"
-            >
-              Family Tracker
-            </h1>
-            <p
-              class="text-slate-500 text-xs font-black uppercase tracking-[0.3em]"
-              id="pageSub"
-            >
-              Cloud Sync Active
-            </p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <nav
-            class="flex bg-slate-900 border border-slate-800 p-1.5 rounded-3xl shadow-inner"
-          >
-            <button
-              id="viewTracker"
-              class="px-8 py-3 rounded-2xl text-[10px] font-black transition-all bg-indigo-600 text-white shadow-xl"
-            >
-              DASHBOARD
-            </button>
-          </nav>
-          <div
-            class="flex items-center bg-slate-900 border border-slate-800 p-1.5 rounded-3xl"
-          >
-            <button
-              id="prevBtn"
-              class="p-2.5 hover:bg-slate-800 rounded-2xl text-slate-500"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
-            <div class="px-6 text-center min-w-[150px]">
-              <span
-                id="monthDisplay"
-                class="text-sm font-black text-white uppercase tracking-wider"
-              ></span>
-            </div>
-            <button
-              id="nextBtn"
-              class="p-2.5 hover:bg-slate-800 rounded-2xl text-slate-500"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div id="trackerSection">
-        <div class="table-wrapper mb-12">
-          <div class="scroll-container no-scrollbar">
-            <table>
-              <thead>
-                <tr id="headerRow">
-                  <th
-                    class="sticky-name text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]"
-                  >
-                    Family Registry
-                  </th>
-                </tr>
-              </thead>
-              <tbody id="memberRows"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <div
-            class="bg-slate-900/40 border border-slate-800/60 rounded-[3.5rem] p-10 shadow-inner"
-          >
-            <div
-              class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10"
-            >
-              <div class="flex items-center gap-4">
-                <span class="text-3xl">🏆</span>
-                <h2
-                  class="text-2xl font-black text-white tracking-tighter uppercase"
-                >
-                  Champion of the Day
-                </h2>
-              </div>
-            </div>
-            <div
-              class="grid grid-cols-7 gap-2 md:gap-3"
-              id="calendarGrid"
-            ></div>
-          </div>
-
-          <div
-            class="bg-slate-900/40 border border-slate-800/60 rounded-[3.5rem] p-10 shadow-inner"
-          >
-            <div class="flex items-center gap-4 mb-8">
-              <span class="text-3xl">🥇</span>
-              <h2
-                class="text-2xl font-black text-white tracking-tighter uppercase"
-              >
-                Live Standings
-              </h2>
-            </div>
-            <div
-              class="grid grid-cols-2 gap-3 mb-10"
-              id="liveLeaderboard"
-            ></div>
-            <div class="flex items-center gap-4 mb-8">
-              <span class="text-3xl">📊</span>
-              <h2
-                class="text-2xl font-black text-white tracking-tighter uppercase"
-              >
-                Family Statistics
-              </h2>
-            </div>
-            <div class="stats-grid" id="personalStatsGrid"></div>
-            <div class="bar-container" id="totalHoursChart"></div>
-            <div
-              class="mt-4 flex justify-between text-[8px] font-bold text-slate-600 uppercase tracking-widest px-1"
-            >
-              <span>Day 1</span>
-              <span id="chartEndDay">Day 31</span>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="bg-slate-900/40 border border-slate-800/60 rounded-[3.5rem] p-10 shadow-inner mb-12"
-        >
-          <div class="flex items-center gap-4 mb-10">
-            <span class="text-3xl">🔥</span>
-            <h2
-              class="text-2xl font-black text-white tracking-tighter uppercase"
-            >
-              Family Consistency
-            </h2>
-          </div>
-          <div class="flex flex-col gap-4" id="consistencyGrid"></div>
-        </div>
+  <section class="panel" id="p-heat" hidden>
+    <div class="card">
+      <h2>Consistency chart</h2>
+      <p class="sub" id="heatSub">—</p>
+      <div class="daynums" id="dayNums"></div>
+      <div class="heat" id="heat"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="card">
+      <h2>Champion of the day</h2>
+      <p class="sub">Highest score wins the day. A tie splits the crown.</p>
+      <div class="champbar">
+        <button class="btn icon" id="prevD">&larr;</button>
+        <div class="day" id="dayLabel">—</div>
+        <button class="btn icon" id="nextD">&rarr;</button>
+        <button class="btn ghost" id="todayD">Today</button>
       </div>
+      <div id="podium" class="podium"></div>
+    </div>
+    <div class="card">
+      <h2>Crowns this month</h2>
+      <p class="sub">How many days each person finished on top.</p>
+      <div class="chips" id="crowns"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-stats" hidden>
+    <div class="card">
+      <h2>Champion of the month</h2>
+      <p class="sub" id="momSub">Highest monthly total.</p>
+      <div class="podium" id="mpodium"></div>
+    </div>
+    <div class="card">
+      <h2>Badges</h2>
+      <p class="sub">Earned from this month's numbers, recalculated live.</p>
+      <div class="chips" id="badges"></div>
+    </div>
+    <div class="card">
+      <h2>Month at a glance</h2>
+      <p class="sub">Everyone combined.</p>
+      <div class="tiles" id="tiles"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-trend" hidden>
+    <div class="card">
+      <h2>Running total</h2>
+      <p class="sub">Cumulative score across the month — the steeper the line, the more consistent.</p>
+      <div id="lineChart"></div>
+    </div>
+    <div class="card">
+      <h2>Team total per day</h2>
+      <p class="sub">All four combined, day by day.</p>
+      <div id="barChart"></div>
+    </div>
+    <div class="card">
+      <h2>Week by week</h2>
+      <p class="sub">Totals grouped into 7-day blocks.</p>
+      <div class="scroller"><table class="summary" id="weeks"></table></div>
+    </div>
+    <div class="card">
+      <h2>Year overview</h2>
+      <p class="sub" id="yearSub">Team total per month. Click a month to open it.</p>
+      <div id="yearStrip"></div>
+    </div>
+  </section>
+
+  <!-- ============ SHEET SYNC ============ -->
+  <section class="panel" id="p-sync" hidden>
+    <div class="card">
+      <h2>Connection</h2>
+      <p class="sub">Paste the web app link from your spreadsheet. Every entry is sent there and pulled back on all devices.</p>
+      <div class="syncstate" id="syncState"><i></i><span>Not connected yet.</span></div>
+      <div class="fields" id="connFields">
+        <label class="f wide">Web app link (ends in /exec)
+          <input type="url" id="syncUrl" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false">
+        </label>
+      </div>
+      <div class="fields">
+        <label class="f">Passphrase
+          <input type="text" id="syncSecret" placeholder="ask whoever set up the sheet" autocomplete="off">
+        </label>
+        <label class="f">Who is on this device
+          <select id="syncMe"></select>
+        </label>
+        <label class="f">Keep in sync automatically
+          <select id="syncAuto"><option value="1">Yes, every 15 seconds</option><option value="0">No, only when I press sync</option></select>
+        </label>
+      </div>
+      <div class="champbar" style="margin:16px 0 0">
+        <button class="btn primary" id="connectBtn">Connect and sync</button>
+        <button class="btn" id="pullAll">Pull everything from the sheet</button>
+        <button class="btn danger" id="disconnect">Disconnect</button>
+      </div>
+      <p class="note" id="syncNote">Nothing is sent anywhere until you add a link.</p>
     </div>
 
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-      import {
-        getDatabase,
-        ref,
-        set,
-        onValue,
-        remove,
-      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-      import {
-        getAuth,
-        signInAnonymously,
-        onAuthStateChanged,
-      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    <div class="card" id="setupCard">
+      <h2>Set up the sheet</h2>
+      <p class="sub">Ten minutes, once. After that it just runs.</p>
+      <ol class="steps">
+        <li>Make a new Google Sheet and name it something like <code>Consistency Tracker</code>.</li>
+        <li>In that sheet open <code>Extensions &rarr; Apps Script</code>.</li>
+        <li>Delete whatever is in the editor, then paste the code below (use the copy button).</li>
+        <li>On line 1, change <code>change-me</code> to a passphrase of your own, and type the same passphrase in the box above.</li>
+        <li>Press <code>Deploy &rarr; New deployment</code>. Choose type <b>Web app</b>. Set <b>Execute as: Me</b> and <b>Who has access: Anyone</b>. Deploy, allow the permissions Google asks for, and copy the web app URL.</li>
+        <li>Paste that URL above and press <b>Connect and sync</b>. Your <code>Data</code> tab fills in, and a readable tab appears for each month.</li>
+      </ol>
+      <div class="champbar" style="margin:14px 0 0">
+        <button class="btn" id="copyCode">Copy the script</button>
+        <button class="btn ghost" id="downloadCode">Download it as a file</button>
+      </div>
+      <pre class="code" id="codeBox"></pre>
+      <p class="note">Anyone who has both the link and the passphrase can write to the sheet, so share them only with the four of you. To change the passphrase later, edit the script, deploy a new version, and update the box above.</p>
+    </div>
 
-      // Firebase Configuration (Same as RPG Tracker)
-      const firebaseConfig = {
-        apiKey: "AIzaSyDUsDIShAvRwd73ag9_uBKmMWzNc6VNIDs",
-        authDomain: "familytracker-153b0.firebaseapp.com",
-        databaseURL:
-          "https://familytracker-153b0-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "familytracker-153b0",
-        storageBucket: "familytracker-153b0.firebasestorage.app",
-        messagingSenderId: "985759869640",
-        appId: "1:985759869640:web:71ba9b0c33a9db069393fd",
-      };
+    <div class="card" id="blockCard">
+      <h2>If Google blocks the authorization</h2>
+      <p class="sub">Look at which screen you actually got — they need different fixes.</p>
+      <ol class="steps">
+        <li><b>"Google hasn't verified this app"</b> — this is the normal one for a script you wrote yourself. Click <code>Advanced</code>, then <code>Go to … (unsafe)</code>, then Allow. It says unsafe because nobody has reviewed it; the code is yours.</li>
+        <li><b>"This app is blocked"</b> with no Advanced link — your account's policy is refusing it. Work through these:
+          <ul>
+            <li>Keep the <code>@OnlyCurrentDoc</code> line at the top of the script. It limits access to this one sheet, which is a non-sensitive permission and often clears the block.</li>
+            <li>Sign out of every Google account except the one that owns the sheet, or do the setup in a private window. Multiple signed-in accounts is the most common cause.</li>
+            <li>School or work account? Its administrator blocks unverified scripts. Move the sheet to a personal Gmail account and set it up there.</li>
+            <li>Advanced Protection Program turned on? It blocks all scripts. Turn it off, authorize, turn it back on.</li>
+            <li>Account managed by Family Link or under 18? It will stay blocked. Use an adult's account as the owner.</li>
+          </ul>
+        </li>
+        <li>Only the sheet owner ever authorizes anything. The other three just open the page — they're never asked to sign in.</li>
+      </ol>
+    </div>
 
-      const app = initializeApp(firebaseConfig);
-      const db = getDatabase(app);
-      const auth = getAuth(app);
-      const trackerRef = ref(db, "familyTimeTracker");
+    <div class="card">
+      <h2>Hosting</h2>
+      <p class="sub">The file is self-contained, so any static host works.</p>
+      <ol class="steps">
+        <li>Drop this HTML file into a <b>GitHub Pages</b> repo, or drag it onto <b>netlify.com/drop</b>, or put it in a shared <b>Google Drive</b> folder and open it from there.</li>
+        <li>Send the four of you the page link. Each person opens it once, pastes the same web app link and passphrase, and picks their name.</li>
+        <li>From then on, whoever logs hours updates the sheet, and everyone else sees it within 15 seconds.</li>
+      </ol>
+    </div>
+  </section>
 
-      const baseMembers = ["Mohammad", "Fadwa", "Alia", "Tasneem"];
-      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const rankEmojis = ["🏆", "🥈", "🥉", "👤"];
-      const colors = {
-        Mohammad: "#6366f1",
-        Fadwa: "#f472b6",
-        Alia: "#a78bfa",
-        Tasneem: "#ef4444",
-      };
+  <section class="panel" id="p-set" hidden>
+    <div class="card">
+      <h2>People</h2>
+      <p class="sub">Rename anyone — history stays attached to their row, and the name change syncs to everyone.</p>
+      <div class="fields" id="peopleFields"></div>
+    </div>
+    <div class="card">
+      <h2>What counts as consistent</h2>
+      <p class="sub">Defaults follow your rule: 4 or more is consistent, 1 up to 4 is partial, under 1 is a miss.</p>
+      <div class="fields">
+        <label class="f">Consistent at or above<input type="number" id="setHigh" step="0.5" min="0"></label>
+        <label class="f">Partial at or above<input type="number" id="setLow" step="0.5" min="0"></label>
+        <label class="f">What are you counting<input type="text" id="setUnit" placeholder="hours"></label>
+        <label class="f">Monthly goal per person<input type="number" id="setGoal" min="0" step="10"></label>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Backups</h2>
+      <p class="sub">The sheet is your real backup. These are for taking data somewhere else.</p>
+      <div class="champbar">
+        <button class="btn" id="exportJson">Export backup (.json)</button>
+        <button class="btn" id="exportCsv">Export this month (.csv)</button>
+        <button class="btn" id="importBtn">Import backup</button>
+        <input type="file" id="importFile" accept="application/json" hidden>
+        <div class="spacer"></div>
+        <button class="btn danger" id="clearMonth">Clear this month</button>
+      </div>
+      <p class="note" id="storageNote">—</p>
+    </div>
+  </section>
+</div>
 
-      let viewDate = new Date(); // Current date
-      const today = new Date(); // Reference for highlighting
-      let appData = {}; // Global store for tracker
+<div class="toast" id="toast"></div>
 
-      // Helper: Convert YYYY-MM-DD to values this app uses
-      function getHoursForDay(name, year, month, day) {
-        const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-        return appData[name]?.[dateKey]?.hours || 0;
+<script type="text/plain" id="gsCode">/**
+ * @OnlyCurrentDoc
+ *
+ * Consistency Tracker — Google Sheets sync
+ * Paste this into Extensions > Apps Script inside your spreadsheet,
+ * change SECRET below, then Deploy > New deployment > Web app.
+ *   Execute as: Me
+ *   Who has access: Anyone
+ * Copy the /exec URL into the tracker's Sync settings.
+ *
+ * The @OnlyCurrentDoc line above limits this script to THIS spreadsheet only,
+ * so Google asks for a non-sensitive permission. If you ever see a runtime
+ * error about permission to access the spreadsheet, delete that line,
+ * re-deploy, and authorize again.
+ */
+
+var SECRET = 'change-me';   // must match the passphrase you type in the app
+var DATA = 'Data';
+var CONFIG = 'Config';
+
+function doGet() {
+  return out({ ok: true, message: 'Tracker sync is running. Paste this URL into the app.' });
+}
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(25000); } catch (err) { return out({ error: 'busy, try again' }); }
+  try {
+    var req = JSON.parse(e.postData.contents);
+    if (String(req.secret || '') !== String(SECRET)) return out({ error: 'wrong passphrase' });
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = dataSheet(ss);
+    var cf = configSheet(ss);
+    var props = PropertiesService.getScriptProperties();
+    var seq = Number(props.getProperty('seq') || 0);
+
+    var rows = sh.getDataRange().getValues();          // [0] is the header row
+    var index = {};
+    for (var i = 1; i < rows.length; i++) index[rows[i][0]] = i;
+
+    var touched = {};
+    var changes = req.changes || [];
+    for (var c = 0; c < changes.length; c++) {
+      var ch = changes[c];
+      var k = ch.month + '|' + ch.person + '|' + ch.day;
+      var value = (ch.value === null || ch.value === undefined) ? '' : ch.value;
+      var at = Number(ch.updatedAt) || 0;
+      var r = index[k];
+      if (r === undefined) {
+        seq++;
+        var row = [k, ch.month, ch.person, Number(ch.day), value, at, ch.by || '', seq];
+        sh.appendRow(row);
+        rows.push(row);
+        index[k] = rows.length - 1;
+        touched[ch.month] = true;
+      } else if (at > (Number(rows[r][5]) || 0)) {
+        seq++;
+        var upd = [k, ch.month, ch.person, Number(ch.day), value, at, ch.by || '', seq];
+        sh.getRange(r + 1, 1, 1, 8).setValues([upd]);
+        rows[r] = upd;
+        touched[ch.month] = true;
       }
+    }
 
-      function setHoursForDay(name, year, month, day, value) {
-        const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-        const path = `familyTimeTracker/${name}/${dateKey}`;
-        if (value === 0) {
-          remove(ref(db, path));
-        } else {
-          set(ref(db, path), { hours: value, notes: "" });
-        }
+    // ---- config (names, thresholds, goal) ----
+    var crows = cf.getDataRange().getValues();
+    var cindex = {};
+    for (var j = 1; j < crows.length; j++) cindex[crows[j][0]] = j;
+    var incoming = req.config || [];
+    for (var m = 0; m < incoming.length; m++) {
+      var item = incoming[m];
+      var at2 = Number(item.updatedAt) || 0;
+      var ri = cindex[item.key];
+      if (ri === undefined) {
+        var crow = [item.key, String(item.value), at2];
+        cf.appendRow(crow);
+        crows.push(crow);
+        cindex[item.key] = crows.length - 1;
+      } else if (at2 > (Number(crows[ri][2]) || 0)) {
+        var cupd = [item.key, String(item.value), at2];
+        cf.getRange(ri + 1, 1, 1, 3).setValues([cupd]);
+        crows[ri] = cupd;
       }
+    }
 
-      function init() {
-        // Require a signed-in session before touching the database.
-        // Paired with database rules that check `auth != null`, this
-        // keeps casual scrapers/bots (which just hit the REST API with
-        // no credentials) from reading or writing your data.
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            // Listen for Tracker Data
-            onValue(trackerRef, (snapshot) => {
-              appData = snapshot.val() || {};
-              render();
-            });
-          }
-        });
+    props.setProperty('seq', String(seq));
 
-        signInAnonymously(auth).catch((err) => {
-          console.error("Auth failed:", err);
-          alert(
-            "Could not connect securely to the database. Check your internet connection or try again.",
-          );
-        });
-
-        setupNavigation();
+    // ---- rebuild the readable month tabs ----
+    var names = {};
+    for (var q = 1; q < crows.length; q++) {
+      if (crows[q][0] === 'people') {
+        try {
+          var list = JSON.parse(crows[q][1]);
+          for (var w = 0; w < list.length; w++) names[list[w].id] = list[w].name;
+        } catch (err2) {}
       }
+    }
+    for (var month in touched) rebuildMonth(ss, month, rows, names);
 
-      function setupNavigation() {
-        document.getElementById("prevBtn").onclick = () => {
-          viewDate.setMonth(viewDate.getMonth() - 1);
-          render();
-        };
-        document.getElementById("nextBtn").onclick = () => {
-          viewDate.setMonth(viewDate.getMonth() + 1);
-          render();
-        };
-      }
-
-      function render() {
-        const y = viewDate.getFullYear(),
-          m = viewDate.getMonth(),
-          dC = new Date(y, m + 1, 0).getDate();
-        document.getElementById("monthDisplay").innerText =
-          viewDate.toLocaleString("default", {
-            month: "long",
-            year: "numeric",
-          });
-
-        const hR = document.getElementById("headerRow");
-        while (hR.children.length > 1) hR.removeChild(hR.lastChild);
-        const isCurrentMonth =
-          y === today.getFullYear() && m === today.getMonth();
-        for (let d = 1; d <= dC; d++) {
-          const th = document.createElement("th");
-          const isToday = isCurrentMonth && d === today.getDate();
-          if (isToday) th.classList.add("today-header");
-          th.innerHTML = `<div class="header-date-stack"><span class="text-[9px] font-black ${isToday ? "text-indigo-400" : "text-slate-700"} uppercase">${days[new Date(y, m, d).getDay()]}</span><span class="text-lg font-black ${isToday ? "text-indigo-300" : "text-slate-200"} leading-none">${d}</span></div>`;
-          hR.appendChild(th);
-        }
-        const avgTh = document.createElement("th");
-        avgTh.className = "sticky-avg";
-        avgTh.innerHTML = `<div class="header-date-stack"><span class="text-[9px] font-black text-indigo-400 uppercase">AVG</span><span class="text-sm font-black text-indigo-300 leading-none">📊</span></div>`;
-        hR.appendChild(avgTh);
-
-        const pastDays = isCurrentMonth ? today.getDate() : dC;
-
-        const tbody = document.getElementById("memberRows");
-        tbody.innerHTML = "";
-        baseMembers.forEach((n, idx) => {
-          const tr = document.createElement("tr");
-          const rowHours = [];
-          for (let d = 1; d <= dC; d++)
-            rowHours.push(getHoursForDay(n, y, m, d));
-          const streak = rowHours.filter((v) => v >= 2).length;
-
-          tr.innerHTML = `<td class="sticky-name border-b border-slate-800/50 h-[80px]"><div class="flex items-center"><div class="flex flex-col"><span class="font-bold text-slate-200 text-sm" style="color: ${colors[n]}">${n}</span><span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">${streak} CONSISTENT DAYS</span></div></div></td>`;
-
-          for (let d = 1; d <= dC; d++) {
-            const val = getHoursForDay(n, y, m, d);
-            const isToday = isCurrentMonth && d === today.getDate();
-            const td = document.createElement("td");
-            td.className = `border-b border-slate-800/40 p-0.5 min-w-[38px] ${isToday ? "today-highlight" : ""}`;
-            const inp = document.createElement("input");
-            inp.type = "number";
-            inp.className = `log-input ${val > 0 ? "has-value" : ""}`;
-            inp.value = val || "";
-            inp.style.borderBottom =
-              val > 0 ? `2px solid ${colors[n]}` : "none";
-
-            inp.onchange = (e) => {
-              const v = parseFloat(e.target.value) || 0;
-              setHoursForDay(n, y, m, d, v);
-            };
-            td.appendChild(inp);
-            tr.appendChild(td);
-          }
-          const avgSum = rowHours.slice(0, pastDays).reduce((a, b) => a + b, 0);
-          const avg = pastDays > 0 ? (avgSum / pastDays).toFixed(1) : "0.0";
-          const avgTd = document.createElement("td");
-          avgTd.className = "sticky-avg border-b border-slate-800/40 p-0.5";
-          avgTd.innerHTML = `<div class="text-sm font-black" style="color: ${colors[n]}">${avg}h</div>`;
-          tr.appendChild(avgTd);
-          tbody.appendChild(tr);
-        });
-        renderAnalytics();
-        renderCalendar();
-      }
-
-      function renderAnalytics() {
-        const y = viewDate.getFullYear(),
-          m = viewDate.getMonth(),
-          dC = new Date(y, m + 1, 0).getDate();
-        const leaderboard = document.getElementById("liveLeaderboard");
-        leaderboard.innerHTML = "";
-
-        const totals = baseMembers
-          .map((n) => {
-            let sum = 0;
-            for (let d = 1; d <= dC; d++) sum += getHoursForDay(n, y, m, d);
-            return { name: n, total: sum };
-          })
-          .sort((a, b) => b.total - a.total);
-
-        totals.forEach((item, idx) => {
-          const card = document.createElement("div");
-          card.className = "rank-card";
-          card.innerHTML = `<span class="text-lg">${rankEmojis[idx] || "👤"}</span><div class="flex flex-col"><span class="text-[10px] font-black uppercase tracking-widest" style="color: ${colors[item.name]}">${item.name}</span><span class="text-[8px] font-bold text-slate-500 uppercase">${item.total.toFixed(1)} Total Hours</span></div>`;
-          leaderboard.appendChild(card);
-        });
-
-        const statsGrid = document.getElementById("personalStatsGrid");
-        statsGrid.innerHTML = "";
-        totals.forEach((item) => {
-          const box = document.createElement("div");
-          box.className = "stats-box";
-          box.style.borderLeft = `4px solid ${colors[item.name]}`;
-          box.innerHTML = `<div class="text-[8px] font-black uppercase tracking-widest mb-1" style="color: ${colors[item.name]}">${item.name}</div><div class="text-xl font-black text-white tracking-tighter">${item.total.toFixed(1)}h</div>`;
-          statsGrid.appendChild(box);
-        });
-
-        const chart = document.getElementById("totalHoursChart");
-        chart.innerHTML = "";
-        let maxDay = 0;
-        const dailyData = [];
-        for (let d = 1; d <= dC; d++) {
-          let daySum = 0;
-          baseMembers.forEach((n) => (daySum += getHoursForDay(n, y, m, d)));
-          dailyData.push(daySum);
-          if (daySum > maxDay) maxDay = daySum;
-        }
-        dailyData.forEach((v) => {
-          const bar = document.createElement("div");
-          bar.className = "bar";
-          bar.style.height = maxDay > 0 ? `${(v / maxDay) * 100}%` : "2px";
-          chart.appendChild(bar);
-        });
-
-        const cGrid = document.getElementById("consistencyGrid");
-        cGrid.innerHTML = "";
-        baseMembers.forEach((n) => {
-          const row = document.createElement("div");
-          row.className = "flex items-center gap-3";
-          row.innerHTML = `<div class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">${n}</div>`;
-          const cells = document.createElement("div");
-          cells.className = "flex-1 grid gap-1";
-          cells.style.gridTemplateColumns = `repeat(${dC}, 1fr)`;
-          let consistentDays = 0;
-          for (let d = 1; d <= dC; d++) {
-            const hasWork = getHoursForDay(n, y, m, d) >= 2;
-            if (hasWork) consistentDays++;
-            cells.innerHTML += `<div class="consistency-cell" style="background: ${hasWork ? colors[n] : "#1e293b"}"></div>`;
-          }
-          row.appendChild(cells);
-          const pct = Math.round((consistentDays / dC) * 100);
-          row.innerHTML += `<div class="w-14 text-right text-sm font-black" style="color: ${colors[n]}">${pct}%</div>`;
-          cGrid.appendChild(row);
+    // ---- what to send back ----
+    var since = Number(req.since) || 0;
+    var entries = [];
+    for (var z = 1; z < rows.length; z++) {
+      if ((Number(rows[z][7]) || 0) > since) {
+        entries.push({
+          month: rows[z][1], person: rows[z][2], day: Number(rows[z][3]),
+          value: rows[z][4] === '' ? null : Number(rows[z][4]),
+          updatedAt: Number(rows[z][5]) || 0, by: rows[z][6]
         });
       }
+    }
+    var config = [];
+    for (var y = 1; y < crows.length; y++) {
+      config.push({ key: crows[y][0], value: crows[y][1], updatedAt: Number(crows[y][2]) || 0 });
+    }
+    return out({ ok: true, now: seq, entries: entries, config: config, count: rows.length - 1 });
+  } catch (err) {
+    return out({ error: String(err) });
+  } finally {
+    lock.releaseLock();
+  }
+}
 
-      function renderCalendar() {
-        const y = viewDate.getFullYear(),
-          m = viewDate.getMonth(),
-          dC = new Date(y, m + 1, 0).getDate(),
-          fD = new Date(y, m, 1).getDay();
-        const isCurrentMonth =
-          y === today.getFullYear() && m === today.getMonth();
-        const grid = document.getElementById("calendarGrid");
-        grid.innerHTML = "";
-        days.forEach(
-          (d) =>
-            (grid.innerHTML += `<div class="text-center text-[10px] font-black text-slate-700 uppercase mb-4">${d}</div>`),
-        );
-        for (let i = 0; i < fD; i++)
-          grid.appendChild(document.createElement("div"));
-        for (let d = 1; d <= dC; d++) {
-          const isToday = isCurrentMonth && d === today.getDate();
-          const card = document.createElement("div");
-          card.className = `calendar-card ${isToday ? "today-highlight" : ""}`;
-          card.innerHTML = `<span class="absolute top-2 left-2 text-[10px] font-black ${isToday ? "text-indigo-400" : "text-slate-700"}">${d}</span>`;
-          let max = 0,
-            winners = [];
-          baseMembers.forEach((n) => {
-            const h = getHoursForDay(n, y, m, d);
-            if (h > max) {
-              max = h;
-              winners = [n];
-            } else if (h > 0 && h === max) {
-              winners.push(n);
-            }
-          });
-          if (max > 0) {
-            card.classList.add("calendar-winner");
-            card.style.borderColor =
-              winners.length === 1 ? colors[winners[0]] : "#6366f1";
-            card.innerHTML += `<div class="text-xl mb-1">👑</div><div class="text-[8px] font-black text-white uppercase">${winners.length > 1 ? "TIE" : winners[0]}</div>`;
-          }
-          grid.appendChild(card);
-        }
+function dataSheet(ss) {
+  var sh = ss.getSheetByName(DATA);
+  if (!sh) {
+    sh = ss.insertSheet(DATA);
+    sh.appendRow(['key', 'month', 'person', 'day', 'value', 'updatedAt', 'by', 'seq']);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function configSheet(ss) {
+  var sh = ss.getSheetByName(CONFIG);
+  if (!sh) {
+    sh = ss.insertSheet(CONFIG);
+    sh.appendRow(['key', 'value', 'updatedAt']);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function rebuildMonth(ss, month, rows, names) {
+  var parts = month.split('-');
+  var days = new Date(Number(parts[0]), Number(parts[1]), 0).getDate();
+  var sh = ss.getSheetByName(month);
+  if (!sh) sh = ss.insertSheet(month);
+
+  var map = {};
+  var seen = {};
+  for (var i = 1; i < rows.length; i++) {
+    if (rows[i][1] === month) {
+      map[rows[i][2] + '|' + Number(rows[i][3])] = rows[i][4];
+      seen[rows[i][2]] = true;
+    }
+  }
+  var people = [];
+  var known = ['p1', 'p2', 'p3', 'p4'];
+  for (var a = 0; a < known.length; a++) if (names[known[a]] || seen[known[a]]) people.push(known[a]);
+  for (var pid in seen) if (people.indexOf(pid) === -1) people.push(pid);
+  if (!people.length) people = known;
+
+  var header = ['Person'];
+  for (var d = 1; d <= days; d++) header.push(d);
+  header.push('Total', 'Average', 'Consistent days');
+  var out2 = [header];
+
+  for (var p = 0; p < people.length; p++) {
+    var pid2 = people[p];
+    var line = [names[pid2] || pid2];
+    var total = 0, consistent = 0;
+    for (var d2 = 1; d2 <= days; d2++) {
+      var v = map[pid2 + '|' + d2];
+      if (v === '' || v === undefined || v === null) { line.push(''); }
+      else { var num = Number(v); line.push(num); total += num; if (num >= 4) consistent++; }
+    }
+    line.push(total, Math.round((total / days) * 100) / 100, consistent);
+    out2.push(line);
+  }
+
+  sh.clear();
+  sh.getRange(1, 1, out2.length, header.length).setValues(out2);
+  sh.getRange(1, 1, 1, header.length).setFontWeight('bold');
+  sh.setFrozenRows(1);
+  sh.setFrozenColumns(1);
+}
+
+function out(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+</script>
+
+<script>
+/* ==========================================================================
+   ▼▼▼  PUT YOUR WEB APP LINK HERE  ▼▼▼
+   Fill this in once, save the file, upload it. Everyone who opens the page
+   is already pointed at the right sheet — they just type the passphrase
+   once on their own device and pick their name.
+
+   Leave it empty ("") if you'd rather each person pastes the link too.
+   ========================================================================== */
+var BUILT_IN_URL = "https://script.google.com/macros/s/AKfycbyyRF3O5PDX9LvSbpYyHt-jvHbmrYEJQu7lOqfcmCZFu3CfOgCSEpfMrJ1BN-pFpZM/exec";   // e.g. "https://script.google.com/macros/s/AKfy…/exec"
+/* ==========================================================================
+   ▲▲▲  NOTHING BELOW HERE NEEDS EDITING  ▲▲▲
+   ========================================================================== */
+(function(){
+"use strict";
+
+/* ---------------- local cache ---------------- */
+var KEY = "consistency-tracker-v2";
+var memory = null, storageKind = "memory";
+var store = {
+  load: function(){
+    if (typeof window.storage !== "undefined" && window.storage){
+      storageKind = "app";
+      return window.storage.get(KEY, false).then(function(r){ return r ? JSON.parse(r.value) : null; })
+        .catch(function(){ return null; });
+    }
+    try {
+      if (window.localStorage){
+        storageKind = "local";
+        var raw = localStorage.getItem(KEY);
+        return Promise.resolve(raw ? JSON.parse(raw) : null);
       }
+    } catch(e){}
+    return Promise.resolve(memory);
+  },
+  save: function(obj){
+    var s = JSON.stringify(obj);
+    if (typeof window.storage !== "undefined" && window.storage){
+      try { window.storage.set(KEY, s, false); return; } catch(e){}
+    }
+    try { if (window.localStorage){ localStorage.setItem(KEY, s); return; } } catch(e){}
+    memory = obj;
+  }
+};
 
-      init();
-    </script>
-  </body>
+/* ---------------- state ---------------- */
+var PEOPLE = [{id:"p1",name:"Fadwa"},{id:"p2",name:"Alia"},{id:"p3",name:"Tasneem"},{id:"p4",name:"Mohammad"}];
+var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+var DOW = ["S","M","T","W","T","F","S"];
+var DEFAULT_CONFIG = {high:4, low:1, unit:"hours", goal:120, theme:"light"};
+
+var state = {
+  people: PEOPLE.map(function(p){ return {id:p.id, name:p.name}; }),
+  config: {high:4, low:1, unit:"hours", goal:120, theme:"light"},
+  configMeta: {},
+  months: {},
+  meta: {},
+  dirty: {},
+  sync: {url:"", secret:"", me:"", auto:1, lastPull:0}
+};
+var view = {y:new Date().getFullYear(), m:new Date().getMonth()};
+var selDay = new Date().getDate();
+
+function key(y,m){ return y + "-" + String(m+1).padStart(2,"0"); }
+function daysIn(y,m){ return new Date(y, m+1, 0).getDate(); }
+function $(s){ return document.querySelector(s); }
+function $$(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); }
+function nf(n){ if (n === null || n === undefined || isNaN(n)) return "—"; return String(Math.round(n*100)/100); }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function mk(){ return key(view.y, view.m); }
+
+function readVal(monthKey, pid, d){
+  var md = state.months[monthKey];
+  if (!md || !md[pid]) return null;
+  var v = md[pid][d];
+  return (v === undefined || v === null || v === "") ? null : Number(v);
+}
+function val(pid, d){ return readVal(mk(), pid, d); }
+function writeVal(monthKey, pid, d, v, ts){
+  if (!state.months[monthKey]) state.months[monthKey] = {};
+  if (!state.months[monthKey][pid]) state.months[monthKey][pid] = {};
+  if (v === null) delete state.months[monthKey][pid][d]; else state.months[monthKey][pid][d] = v;
+  if (!state.meta[monthKey]) state.meta[monthKey] = {};
+  if (!state.meta[monthKey][pid]) state.meta[monthKey][pid] = {};
+  state.meta[monthKey][pid][d] = ts;
+}
+function metaOf(monthKey, pid, d){
+  var m = state.meta[monthKey];
+  return (m && m[pid] && m[pid][d]) || 0;
+}
+function localEdit(pid, d, v){
+  var monthKey = mk(), ts = Date.now();
+  writeVal(monthKey, pid, d, v, ts);
+  state.dirty[monthKey + "|" + pid + "|" + d] = {value:v, updatedAt:ts};
+}
+function touchConfig(k){ state.configMeta[k] = Date.now(); }
+
+function level(v){
+  if (v === null || v < state.config.low) return 0;
+  if (v >= state.config.high) return v >= state.config.high * 1.75 ? 4 : 3;
+  var span = Math.max(state.config.high - state.config.low, 0.001);
+  return (v - state.config.low) / span >= 0.5 ? 2 : 1;
+}
+function isToday(d){
+  var t = new Date();
+  return t.getFullYear() === view.y && t.getMonth() === view.m && t.getDate() === d;
+}
+function personColor(i){ return ["var(--p1)","var(--p2)","var(--p3)","var(--p4)"][i % 4]; }
+
+/* ---------------- stats ---------------- */
+function statsFor(pid){
+  var n = daysIn(view.y, view.m);
+  var total=0, active=0, consistent=0, best=0, bestDay=null, streak=0, longest=0, current=0, d, v;
+  for (d = 1; d <= n; d++){
+    v = val(pid, d);
+    if (v !== null){ total += v; if (v > 0) active++; }
+    if (v !== null && v >= state.config.high){ consistent++; streak++; if (streak > longest) longest = streak; }
+    else streak = 0;
+    if (v !== null && v > best){ best = v; bestDay = d; }
+  }
+  var t = new Date();
+  var endDay = (t.getFullYear() === view.y && t.getMonth() === view.m) ? t.getDate() : n;
+  for (d = endDay; d >= 1; d--){
+    v = val(pid, d);
+    if (v !== null && v >= state.config.high) current++; else break;
+  }
+  return {total:total, active:active, consistent:consistent, best:best, bestDay:bestDay, longest:longest,
+    current:current, avgMonth: total/n, avgActive: active ? total/active : 0, consistency: (consistent/n)*100};
+}
+function dayRanking(d){
+  return state.people.map(function(p,i){ return {id:p.id, name:p.name, i:i, v: val(p.id,d)}; })
+    .sort(function(a,b){ return (b.v === null ? -1 : b.v) - (a.v === null ? -1 : a.v); });
+}
+function championsOf(d){
+  var rows = dayRanking(d).filter(function(r){ return r.v !== null && r.v > 0; });
+  if (!rows.length) return [];
+  var top = rows[0].v;
+  return rows.filter(function(r){ return r.v === top; }).map(function(r){ return r.id; });
+}
+function crownCounts(){
+  var n = daysIn(view.y, view.m), out = {};
+  state.people.forEach(function(p){ out[p.id] = 0; });
+  for (var d = 1; d <= n; d++) championsOf(d).forEach(function(id){ out[id]++; });
+  return out;
+}
+
+/* ---------------- render ---------------- */
+function renderHeader(){
+  $("#mName").textContent = MONTHS[view.m] + " " + view.y;
+  var n = daysIn(view.y, view.m), filled = 0;
+  for (var d = 1; d <= n; d++) state.people.forEach(function(p){ if (val(p.id,d) !== null) filled++; });
+  $("#mMeta").textContent = n + " days · " + filled + " of " + (n*4) + " entries";
+  var u = state.config.unit ? " (" + state.config.unit + ")" : "";
+  $("#tableSub").textContent = "Type a number in any day" + u + ". Arrow keys move between cells; every entry goes to the sheet.";
+  $("#heatSub").textContent = "Green means " + state.config.high + "+ — consistent. Light green is " +
+    state.config.low + " up to " + state.config.high + ". Grey is under " + state.config.low + ".";
+}
+function renderGrid(){
+  var n = daysIn(view.y, view.m);
+  var h = "<thead><tr><th class='name'>Person</th>";
+  for (var d = 1; d <= n; d++){
+    var dow = new Date(view.y, view.m, d).getDay();
+    var cls = isToday(d) ? "today" : ((dow === 5 || dow === 6) ? "wk" : "");
+    h += "<th class='" + cls + "'>" + d + "<br><span style='opacity:.6'>" + DOW[dow] + "</span></th>";
+  }
+  h += "</tr></thead><tbody>";
+  state.people.forEach(function(p,i){
+    h += "<tr><td class='name'><span class='swatch' style='background:" + personColor(i) + "'></span>" + esc(p.name) + "</td>";
+    for (var d = 1; d <= n; d++){
+      var v = val(p.id, d);
+      h += "<td class='cellwrap'><input class='cell v" + level(v) + "' type='number' step='0.5' min='0' data-p='" +
+        p.id + "' data-d='" + d + "' value='" + (v === null ? "" : v) + "' aria-label='" + esc(p.name) + " day " + d + "'></td>";
+    }
+    h += "</tr>";
+  });
+  h += "<tr class='teamrow'><td class='name'>Team total</td>";
+  for (var d2 = 1; d2 <= n; d2++){
+    var s = 0, any = false;
+    state.people.forEach(function(p){ var v = val(p.id,d2); if (v !== null){ s += v; any = true; } });
+    h += "<td data-team='" + d2 + "'>" + (any ? nf(s) : "·") + "</td>";
+  }
+  h += "</tr></tbody>";
+  $("#grid").innerHTML = h;
+}
+function refreshGridValues(){
+  var active = document.activeElement;
+  $$("#grid input.cell").forEach(function(el){
+    if (el === active) return;
+    var v = val(el.dataset.p, Number(el.dataset.d));
+    var s = v === null ? "" : String(v);
+    if (el.value !== s) el.value = s;
+    var c = "cell v" + level(v);
+    if (el.className !== c) el.className = c;
+  });
+  var n = daysIn(view.y, view.m);
+  for (var d = 1; d <= n; d++){
+    var s2 = 0, any = false;
+    state.people.forEach(function(p){ var v = val(p.id,d); if (v !== null){ s2 += v; any = true; } });
+    var cell = $("#grid").querySelector("[data-team='" + d + "']");
+    if (cell) cell.textContent = any ? nf(s2) : "·";
+  }
+}
+function renderSummary(){
+  var goal = state.config.goal || 0;
+  var h = "<thead><tr><th>Person</th><th>Total</th><th>Avg / day</th><th>Avg / active day</th><th>Consistent days</th>" +
+    "<th>Consistency</th><th>Best day</th><th>Longest streak</th>" + (goal ? "<th>Goal " + goal + "</th>" : "") + "</tr></thead><tbody>";
+  state.people.forEach(function(p,i){
+    var s = statsFor(p.id);
+    var pct = goal ? Math.min(100, (s.total/goal)*100) : 0;
+    h += "<tr><td><span class='swatch' style='background:" + personColor(i) + "'></span>" + esc(p.name) + "</td>" +
+      "<td><b>" + nf(s.total) + "</b></td><td>" + nf(s.avgMonth) + "</td>" +
+      "<td>" + (s.active ? nf(s.avgActive) : "—") + "</td><td>" + s.consistent + "</td>" +
+      "<td>" + Math.round(s.consistency) + "%</td>" +
+      "<td>" + (s.bestDay ? nf(s.best) + " <span style='color:var(--muted)'>· d" + s.bestDay + "</span>" : "—") + "</td>" +
+      "<td>" + s.longest + (s.current > 1 ? " <span style='color:var(--muted)'>· now " + s.current + "</span>" : "") + "</td>" +
+      (goal ? "<td>" + Math.round(pct) + "%<div class='bar'><i style='width:" + pct + "%;background:" + personColor(i) + "'></i></div></td>" : "") + "</tr>";
+  });
+  $("#summary").innerHTML = h + "</tbody>";
+}
+function renderHeat(){
+  var n = daysIn(view.y, view.m), d, nums = "";
+  for (d = 1; d <= n; d++) nums += "<span>" + ((d % 2 || n < 20) ? d : "") + "</span>";
+  $("#dayNums").innerHTML = nums;
+  var crowns = {};
+  for (d = 1; d <= n; d++) championsOf(d).forEach(function(id){ (crowns[id] = crowns[id] || {})[d] = true; });
+  var h = "";
+  state.people.forEach(function(p,i){
+    var s = statsFor(p.id);
+    h += "<div class='heatrow'><div class='who'><span class='swatch' style='background:" + personColor(i) + "'></span>" +
+      esc(p.name) + "<span class='pct'>" + s.consistent + "/" + n + "</span></div><div class='strip'>";
+    for (var d2 = 1; d2 <= n; d2++){
+      var v = val(p.id, d2);
+      var c = (crowns[p.id] && crowns[p.id][d2]) ? " crown" : "";
+      var sel = d2 === selDay ? " sel" : "";
+      h += "<div class='sq v" + level(v) + c + sel + "' data-day='" + d2 + "' title='" + esc(p.name) + " · " +
+        MONTHS[view.m] + " " + d2 + ": " + (v === null ? "no entry" : nf(v)) + "'>" + (v === null ? "" : nf(v)) + "</div>";
+    }
+    h += "</div></div>";
+  });
+  $("#heat").innerHTML = h;
+  $("#legend").innerHTML =
+    "<span><b style='background:var(--l0)'></b>Under " + state.config.low + " — missed</span>" +
+    "<span><b style='background:var(--l1)'></b><b style='background:var(--l2)'></b>" + state.config.low + " to " + state.config.high + " — partial</span>" +
+    "<span><b style='background:var(--l3)'></b><b style='background:var(--l4)'></b>" + state.config.high + "+ — consistent</span>" +
+    "<span><b style='background:var(--gold)'></b>Champion of that day</span>";
+}
+function renderChampion(){
+  var n = daysIn(view.y, view.m);
+  if (selDay > n) selDay = n;
+  var dow = new Date(view.y, view.m, selDay).getDay();
+  var full = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][dow];
+  $("#dayLabel").textContent = full + " " + selDay;
+  var rows = dayRanking(selDay), winners = championsOf(selDay);
+  if (!winners.length){
+    $("#podium").innerHTML = "<div class='empty'>No entries for " + MONTHS[view.m] + " " + selDay +
+      " yet. Add a number in the monthly table and the crown appears here.</div>";
+  } else {
+    var h = "", rank = 0, last = "x";
+    rows.forEach(function(r, idx){
+      if (r.v !== last){ rank = idx + 1; last = r.v; }
+      var win = winners.indexOf(r.id) > -1;
+      h += "<div class='pod" + (win ? " win" : "") + "'>" + (win ? "<span class='crown'>&#128081;</span>" : "") +
+        "<div class='rank'>#" + rank + "</div><div class='nm' style='color:" + personColor(r.i) + "'>" + esc(r.name) + "</div>" +
+        "<div class='val'>" + (r.v === null ? "—" : nf(r.v)) + "</div><div class='tagline2'>" +
+        (r.v === null ? "no entry" : (r.v >= state.config.high ? "consistent" : (r.v >= state.config.low ? "partial" : "under target"))) +
+        "</div></div>";
+    });
+    $("#podium").innerHTML = h;
+  }
+  var cc = crownCounts();
+  var maxC = Math.max.apply(null, state.people.map(function(p){ return cc[p.id]; }));
+  $("#crowns").innerHTML = state.people.map(function(p,i){
+    return "<span class='chip'" + (cc[p.id] === maxC && maxC > 0 ? " style='border-color:var(--gold);background:var(--gold-soft)'" : "") +
+      "><span style='color:" + personColor(i) + ";font-weight:700'>" + esc(p.name) + "</span><b>" + cc[p.id] + "</b> days on top</span>";
+  }).join("");
+}
+function renderStandings(){
+  var ranked = state.people.map(function(p,i){ return {id:p.id, name:p.name, i:i, s:statsFor(p.id)}; })
+    .sort(function(a,b){ return b.s.total - a.s.total; });
+  var top = ranked[0] ? ranked[0].s.total : 0;
+  $("#momSub").textContent = top > 0 ? "Highest total for " + MONTHS[view.m] + " " + view.y + "." : "No entries yet this month.";
+  $("#mpodium").innerHTML = ranked.map(function(r, idx){
+    var win = r.s.total === top && top > 0;
+    return "<div class='pod" + (win ? " win" : "") + "'>" + (win ? "<span class='crown'>&#127942;</span>" : "") +
+      "<div class='rank'>#" + (idx+1) + "</div><div class='nm' style='color:" + personColor(r.i) + "'>" + esc(r.name) + "</div>" +
+      "<div class='val'>" + nf(r.s.total) + "</div><div class='tagline2'>" + r.s.consistent +
+      " consistent days · avg " + nf(r.s.avgMonth) + "</div></div>";
+  }).join("");
+
+  var all = state.people.map(function(p,i){ return {id:p.id, name:p.name, i:i, s:statsFor(p.id)}; });
+  var cc = crownCounts(), n = daysIn(view.y, view.m), badges = [];
+  function pick(fn, min){
+    var best = all.slice().sort(function(a,b){ return fn(b) - fn(a); })[0];
+    return (best && fn(best) >= (min || 1)) ? best : null;
+  }
+  var b;
+  if ((b = pick(function(x){ return x.s.total; }))) badges.push(["&#127942;","Top scorer",b,nf(b.s.total)]);
+  if ((b = pick(function(x){ return x.s.longest; }, 2))) badges.push(["&#128293;","Longest streak",b,b.s.longest + " days"]);
+  if ((b = pick(function(x){ return x.s.consistent; }))) badges.push(["&#127919;","Most consistent days",b,b.s.consistent]);
+  if ((b = pick(function(x){ return cc[x.id]; }))) badges.push(["&#128081;","Most daily crowns",b,cc[b.id]]);
+  if ((b = pick(function(x){ return x.s.best; }))) badges.push(["&#9889;","Single best day",b,nf(b.s.best) + " on day " + b.s.bestDay]);
+  var half = Math.floor(n/2);
+  var imp = all.map(function(x){
+    var a = 0, bb = 0, d;
+    for (d = 1; d <= half; d++) a += val(x.id,d) || 0;
+    for (d = half+1; d <= n; d++) bb += val(x.id,d) || 0;
+    return {id:x.id, name:x.name, i:x.i, delta: bb - a};
+  }).sort(function(a,b2){ return b2.delta - a.delta; })[0];
+  if (imp && imp.delta > 0) badges.push(["&#128200;","Most improved",imp,"+" + nf(imp.delta) + " in the 2nd half"]);
+  var goal = state.config.goal || 0;
+  if (goal) all.forEach(function(x){ if (x.s.total >= goal) badges.push(["&#9989;","Goal reached",x,nf(x.s.total) + " / " + goal]); });
+  all.forEach(function(x){ if (x.s.consistent === n && n > 0) badges.push(["&#128142;","Perfect month",x,"every single day"]); });
+
+  $("#badges").innerHTML = badges.length ? badges.map(function(bd){
+    return "<span class='chip'><span>" + bd[0] + "</span><span style='color:var(--muted)'>" + bd[1] + "</span><b style='color:" +
+      personColor(bd[2].i) + "'>" + esc(bd[2].name) + "</b><span style='color:var(--muted)'>" + bd[3] + "</span></span>";
+  }).join("") : "<span class='empty' style='display:block;width:100%'>Badges appear once there are numbers to compare.</span>";
+
+  var team = 0, entries = 0, consistentAll = 0, bestDayTotal = 0, bestDayN = null, perfectDays = 0;
+  for (var d = 1; d <= n; d++){
+    var s = 0, cnt = 0;
+    state.people.forEach(function(p){
+      var v = val(p.id,d);
+      if (v !== null){ s += v; entries++; if (v >= state.config.high){ consistentAll++; cnt++; } }
+    });
+    team += s;
+    if (s > bestDayTotal){ bestDayTotal = s; bestDayN = d; }
+    if (cnt === state.people.length) perfectDays++;
+  }
+  var slots = n * state.people.length;
+  $("#tiles").innerHTML = [
+    ["Team total", nf(team), state.config.unit || "all four combined"],
+    ["Team average per day", nf(team/n), "across " + n + " days"],
+    ["Consistent entries", consistentAll + " / " + slots, Math.round(consistentAll/slots*100) + "% of all slots"],
+    ["Days logged", entries + " / " + slots, (slots - entries) + " still empty"],
+    ["Biggest team day", bestDayN ? nf(bestDayTotal) : "—", bestDayN ? MONTHS[view.m] + " " + bestDayN : "no entries"],
+    ["All-four days", perfectDays, "everyone hit " + state.config.high + "+"]
+  ].map(function(t){
+    return "<div class='tile'><div class='k'>" + t[0] + "</div><div class='v'>" + t[1] + "</div><div class='n'>" + t[2] + "</div></div>";
+  }).join("");
+}
+function renderTrends(){
+  var n = daysIn(view.y, view.m), W = 900, H = 300, pad = {t:14,r:14,b:26,l:38}, i;
+  var series = state.people.map(function(p,idx){
+    var run = 0, pts = [];
+    for (var d = 1; d <= n; d++){ run += val(p.id,d) || 0; pts.push(run); }
+    return {p:p, i:idx, pts:pts, end:run};
+  });
+  var maxY = Math.max(10, Math.max.apply(null, series.map(function(s){ return s.end; })));
+  function x(d){ return pad.l + (d-1) * (W - pad.l - pad.r) / Math.max(1, n-1); }
+  function y(v){ return H - pad.b - (v / maxY) * (H - pad.t - pad.b); }
+  var g = "";
+  for (i = 0; i <= 4; i++){
+    var yy = pad.t + i * (H - pad.t - pad.b)/4;
+    g += "<line class='gline' x1='" + pad.l + "' x2='" + (W-pad.r) + "' y1='" + yy + "' y2='" + yy + "' stroke-width='1'/>" +
+      "<text x='4' y='" + (yy+3) + "'>" + Math.round(maxY - i*maxY/4) + "</text>";
+  }
+  for (var d3 = 1; d3 <= n; d3 += (n > 20 ? 3 : 2)) g += "<text x='" + x(d3) + "' y='" + (H-8) + "' text-anchor='middle'>" + d3 + "</text>";
+  series.forEach(function(s){
+    var path = s.pts.map(function(v,idx){ return (idx ? "L" : "M") + x(idx+1).toFixed(1) + " " + y(v).toFixed(1); }).join(" ");
+    g += "<path d='" + path + "' fill='none' stroke='" + personColor(s.i) + "' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>" +
+      "<circle cx='" + x(n) + "' cy='" + y(s.end) + "' r='3.5' fill='" + personColor(s.i) + "'/>";
+  });
+  $("#lineChart").innerHTML = "<svg viewBox='0 0 " + W + " " + H + "' width='100%' role='img' aria-label='Cumulative totals'>" + g + "</svg>" +
+    "<div class='chips' style='margin-top:10px'>" + series.map(function(s){
+      return "<span class='chip'><b style='color:" + personColor(s.i) + "'>" + esc(s.p.name) + "</b> " + nf(s.end) + "</span>";
+    }).join("") + "</div>";
+
+  var BW = 900, BH = 190, bp = {t:10,r:10,b:22,l:34}, totals = [];
+  for (var d4 = 1; d4 <= n; d4++){
+    var s2 = 0;
+    state.people.forEach(function(p){ s2 += val(p.id,d4) || 0; });
+    totals.push(s2);
+  }
+  var bmax = Math.max(4, Math.max.apply(null, totals));
+  var bw = (BW - bp.l - bp.r) / n;
+  var bg = "<line class='gline' x1='" + bp.l + "' x2='" + (BW-bp.r) + "' y1='" + (BH-bp.b) + "' y2='" + (BH-bp.b) + "' stroke-width='1'/>" +
+    "<text x='4' y='" + (bp.t+8) + "'>" + Math.round(bmax) + "</text>";
+  totals.forEach(function(v,idx){
+    var hh = (v / bmax) * (BH - bp.t - bp.b), xx = bp.l + idx*bw;
+    bg += "<rect x='" + (xx+1.5) + "' y='" + (BH-bp.b-hh) + "' width='" + (bw-3) + "' height='" + Math.max(hh,0) +
+      "' rx='3' fill='var(--accent)' opacity='" + (isToday(idx+1) ? 1 : .78) + "'><title>Day " + (idx+1) + ": " + nf(v) + "</title></rect>";
+    if ((idx+1) % (n > 20 ? 3 : 2) === 1 || n < 10)
+      bg += "<text x='" + (xx+bw/2) + "' y='" + (BH-6) + "' text-anchor='middle'>" + (idx+1) + "</text>";
+  });
+  $("#barChart").innerHTML = "<svg viewBox='0 0 " + BW + " " + BH + "' width='100%' role='img' aria-label='Team total per day'>" + bg + "</svg>";
+
+  var blocks = [];
+  for (var st = 1; st <= n; st += 7) blocks.push([st, Math.min(st+6, n)]);
+  var wh = "<thead><tr><th>Person</th>" + blocks.map(function(b){ return "<th>Days " + b[0] + "–" + b[1] + "</th>"; }).join("") + "<th>Month</th></tr></thead><tbody>";
+  state.people.forEach(function(p){
+    wh += "<tr><td>" + esc(p.name) + "</td>";
+    var tot = 0;
+    blocks.forEach(function(b){
+      var s3 = 0;
+      for (var d = b[0]; d <= b[1]; d++) s3 += val(p.id,d) || 0;
+      tot += s3;
+      wh += "<td>" + (s3 ? nf(s3) : "·") + "</td>";
+    });
+    wh += "<td><b>" + nf(tot) + "</b></td></tr>";
+  });
+  $("#weeks").innerHTML = wh + "</tbody>";
+
+  var ytot = [];
+  for (var m = 0; m < 12; m++){
+    var md = state.months[key(view.y,m)] || {}, s4 = 0;
+    Object.keys(md).forEach(function(pid){ Object.keys(md[pid]).forEach(function(d){ s4 += Number(md[pid][d]) || 0; }); });
+    ytot.push(s4);
+  }
+  var ymax = Math.max.apply(null, ytot) || 1;
+  $("#yearSub").textContent = "Team total per month in " + view.y + ". Click a month to open it.";
+  $("#yearStrip").innerHTML = "<div style='display:grid;grid-template-columns:repeat(12,1fr);gap:5px;align-items:end'>" +
+    ytot.map(function(v,mm){
+      return "<button class='btn ghost' data-ym='" + mm + "' style='padding:6px 2px;display:flex;flex-direction:column;gap:6px;align-items:center;" +
+        (mm === view.m ? "border-color:var(--accent);" : "") + "'><span style='display:block;width:100%;height:" +
+        (10 + (v/ymax)*54) + "px;border-radius:4px;background:" + (v ? "var(--accent)" : "var(--l0)") + ";opacity:" +
+        (mm === view.m ? 1 : .72) + "'></span><span style='font-size:10px;font-family:var(--mono)'>" + MONTHS[mm].slice(0,3) +
+        "</span><span style='font-size:10px;color:var(--muted);font-family:var(--mono)'>" + (v ? nf(v) : "·") + "</span></button>";
+    }).join("") + "</div>";
+}
+function renderSettings(){
+  $("#peopleFields").innerHTML = state.people.map(function(p,i){
+    return "<label class='f'>Person " + (i+1) + "<input type='text' data-person='" + p.id + "' value='" + esc(p.name) + "'></label>";
+  }).join("");
+  $("#setHigh").value = state.config.high;
+  $("#setLow").value = state.config.low;
+  $("#setUnit").value = state.config.unit;
+  $("#setGoal").value = state.config.goal;
+  $("#storageNote").textContent = storageKind === "app"
+    ? "This device also keeps a local copy so the page opens instantly and still works offline."
+    : (storageKind === "local"
+      ? "This device keeps a local copy in the browser, so the page works offline and syncs when you're back online."
+      : "This browser is blocking local storage, so an offline copy can't be kept — stay connected to the sheet.");
+}
+
+/* ---------------- sync ---------------- */
+var syncing = false, lastSyncAt = 0, syncErr = null, timer = null;
+function dirtyCount(){ return Object.keys(state.dirty).length; }
+function connected(){ return !!state.sync.url; }
+function renderSyncUI(){
+  var pill = $("#syncPill"), box = $("#syncState"), txt, cls;
+  if (!connected()){ cls = ""; txt = "Not connected"; }
+  else if (needsSecret()){ cls = "err"; txt = "Passphrase needed"; }
+  else if (syncing){ cls = "busy"; txt = "Syncing…"; }
+  else if (syncErr){ cls = "err"; txt = dirtyCount() ? dirtyCount() + " waiting to send" : "Sync problem"; }
+  else if (dirtyCount()){ cls = "busy"; txt = dirtyCount() + " waiting to send"; }
+  else if (lastSyncAt){
+    var mins = Math.floor((Date.now() - lastSyncAt)/60000);
+    cls = "ok"; txt = mins < 1 ? "Saved to sheet" : "Synced " + mins + "m ago";
+  } else { cls = "ok"; txt = "Connected"; }
+  pill.className = "pill " + cls;
+  pill.querySelector("span").textContent = txt;
+  if (box){
+    box.className = "syncstate " + cls;
+    box.querySelector("span").textContent = !connected()
+      ? "Not connected yet. Follow the setup below, then paste your link."
+      : (needsSecret() ? "Type the passphrase below and press save — this device will then stay connected on its own."
+        : (syncErr ? "Last try failed: " + syncErr + ". Your entries are saved on this device and will be sent when it works again."
+        : (syncing ? "Talking to the sheet…"
+          : (dirtyCount() ? dirtyCount() + " entries queued for the sheet." : "Everything on this device matches the sheet."))));
+  }
+}
+function dirtyList(){
+  return Object.keys(state.dirty).map(function(k){
+    var parts = k.split("|");
+    return {month:parts[0], person:parts[1], day:Number(parts[2]),
+      value: state.dirty[k].value, updatedAt: state.dirty[k].updatedAt, by: state.sync.me || ""};
+  });
+}
+function configList(){
+  return [
+    {key:"people", value: JSON.stringify(state.people), updatedAt: state.configMeta.people || 0},
+    {key:"high", value: state.config.high, updatedAt: state.configMeta.high || 0},
+    {key:"low", value: state.config.low, updatedAt: state.configMeta.low || 0},
+    {key:"unit", value: state.config.unit, updatedAt: state.configMeta.unit || 0},
+    {key:"goal", value: state.config.goal, updatedAt: state.configMeta.goal || 0}
+  ];
+}
+function applyRemote(data){
+  var changedMonths = false;
+  (data.entries || []).forEach(function(e){
+    if (e.updatedAt > metaOf(e.month, e.person, e.day)){
+      writeVal(e.month, e.person, e.day, e.value === null ? null : Number(e.value), e.updatedAt);
+      changedMonths = true;
+    }
+    var k = e.month + "|" + e.person + "|" + e.day;
+    if (state.dirty[k] && state.dirty[k].updatedAt <= e.updatedAt) delete state.dirty[k];
+  });
+  (data.config || []).forEach(function(c){
+    if (!(c.updatedAt > (state.configMeta[c.key] || 0))) return;
+    state.configMeta[c.key] = c.updatedAt;
+    if (c.key === "people"){
+      try {
+        var list = JSON.parse(c.value);
+        if (list && list.length) state.people = list;
+      } catch(err){}
+    } else if (c.key === "unit"){ state.config.unit = String(c.value);
+    } else { state.config[c.key] = Number(c.value); }
+    changedMonths = true;
+  });
+  return changedMonths;
+}
+function syncNow(manual){
+  if (!connected()){ if (manual) toast("Add your web app link in Sheet sync first"); return Promise.resolve(); }
+  if (needsSecret()){ if (manual) toast("Type the passphrase in Sheet sync first"); return Promise.resolve(); }
+  if (syncing) return Promise.resolve();
+  syncing = true; renderSyncUI();
+  var sent = dirtyList();
+  var payload = {secret: state.sync.secret || "", since: state.sync.lastPull || 0, changes: sent, config: configList()};
+  return fetch(state.sync.url, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: {"Content-Type": "text/plain;charset=utf-8"},
+    redirect: "follow"
+  }).then(function(r){ return r.json(); }).then(function(data){
+    if (data.error) throw new Error(data.error);
+    sent.forEach(function(c){
+      var k = c.month + "|" + c.person + "|" + c.day;
+      if (state.dirty[k] && state.dirty[k].updatedAt <= c.updatedAt) delete state.dirty[k];
+    });
+    var changed = applyRemote(data);
+    state.sync.lastPull = data.now || state.sync.lastPull;
+    syncErr = null; lastSyncAt = Date.now();
+    persist();
+    if (changed || manual){ refreshGridValues(); renderDerived(); renderSettings(); }
+    if (manual) toast("Sheet is up to date — " + (data.count || 0) + " entries stored");
+  }).catch(function(e){
+    syncErr = (e && e.message) ? e.message : "could not reach the sheet";
+    if (manual) toast("Couldn't reach the sheet: " + syncErr);
+  }).then(function(){
+    syncing = false; renderSyncUI();
+  });
+}
+function scheduleSync(){
+  if (timer) clearTimeout(timer);
+  if (!connected() || !Number(state.sync.auto)) return;
+  timer = setTimeout(function(){ syncNow(false).then(scheduleSync); }, 15000);
+}
+function pushSoon(){
+  if (!connected()) return;
+  clearTimeout(window.__push);
+  window.__push = setTimeout(function(){ syncNow(false); }, 1800);
+}
+
+/* ---------------- shared plumbing ---------------- */
+var saveTimer = null;
+function persist(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function(){ store.save(state); }, 300);
+}
+function renderDerived(){
+  renderHeader(); renderSummary(); renderHeat(); renderChampion(); renderStandings(); renderTrends(); renderSyncUI();
+}
+function renderAll(){ renderGrid(); renderDerived(); renderSettings(); renderSyncFields(); }
+function toast(msg){
+  var t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(function(){ t.classList.remove("show"); }, 2400);
+}
+function isLocked(){ return !!BUILT_IN_URL; }
+function needsSecret(){ return isLocked() && !state.sync.secret; }
+function renderSyncFields(){
+  var locked = isLocked();
+  $("#connFields").hidden = locked;
+  $("#disconnect").hidden = locked;
+  $("#connectBtn").textContent = locked ? "Save passphrase and sync" : "Connect and sync";
+  $("#syncUrl").value = state.sync.url || "";
+  $("#syncSecret").value = state.sync.secret || "";
+  $("#syncAuto").value = String(state.sync.auto ? 1 : 0);
+  $("#syncMe").innerHTML = "<option value=''>Not saying</option>" + state.people.map(function(p){
+    return "<option value='" + p.id + "'" + (state.sync.me === p.id ? " selected" : "") + ">" + esc(p.name) + "</option>";
+  }).join("");
+  $("#setupCard").hidden = locked;
+  $("#blockCard").hidden = locked;
+  $("#syncNote").textContent = locked
+    ? (needsSecret()
+      ? "This page already knows which sheet to use. Type the passphrase once and this device stays connected."
+      : "Connected to the family sheet. Pick your name above so entries are logged under it.")
+    : (connected()
+      ? "Connected. Entries are sent as you type and pulled back " + (Number(state.sync.auto) ? "every 15 seconds." : "when you press sync.")
+      : "Nothing is sent anywhere until you add a link.");
+}
+
+/* ---------------- events ---------------- */
+function goMonth(delta){
+  var d = new Date(view.y, view.m + delta, 1);
+  view = {y: d.getFullYear(), m: d.getMonth()};
+  var t = new Date();
+  selDay = (t.getFullYear() === view.y && t.getMonth() === view.m) ? t.getDate() : 1;
+  renderGrid(); renderDerived();
+}
+$("#prevM").onclick = function(){ goMonth(-1); };
+$("#nextM").onclick = function(){ goMonth(1); };
+$("#todayBtn").onclick = function(){
+  var t = new Date(); view = {y:t.getFullYear(), m:t.getMonth()}; selDay = t.getDate();
+  renderGrid(); renderDerived();
+};
+$("#printBtn").onclick = function(){ window.print(); };
+$("#themeBtn").onclick = function(){
+  var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  state.config.theme = next; persist();
+};
+$("#syncPill").onclick = function(){ syncNow(true); };
+$$(".tab").forEach(function(tab){
+  tab.onclick = function(){
+    $$(".tab").forEach(function(t){ t.setAttribute("aria-selected", String(t === tab)); });
+    $$(".panel").forEach(function(p){ p.hidden = (p.id !== tab.dataset.panel); });
+    window.scrollTo({top:0, behavior:"smooth"});
+  };
+});
+
+$("#grid").addEventListener("input", function(e){
+  var el = e.target;
+  if (!el.classList.contains("cell")) return;
+  var raw = el.value.trim();
+  var v = raw === "" ? null : Math.max(0, Number(raw));
+  if (raw !== "" && isNaN(v)) return;
+  localEdit(el.dataset.p, Number(el.dataset.d), v);
+  el.className = "cell v" + level(v);
+  var d = el.dataset.d, s = 0, any = false;
+  state.people.forEach(function(p){ var x = val(p.id, Number(d)); if (x !== null){ s += x; any = true; } });
+  var tt = $("#grid").querySelector("[data-team='" + d + "']");
+  if (tt) tt.textContent = any ? nf(s) : "·";
+  persist(); renderSyncUI(); pushSoon();
+  clearTimeout(window.__d);
+  window.__d = setTimeout(renderDerived, 250);
+});
+$("#grid").addEventListener("keydown", function(e){
+  var el = e.target;
+  if (!el.classList.contains("cell")) return;
+  var pi = state.people.findIndex(function(x){ return x.id === el.dataset.p; });
+  var d = Number(el.dataset.d), t = null;
+  if (e.key === "ArrowRight" || e.key === "Enter") t = [pi, d+1];
+  else if (e.key === "ArrowLeft") t = [pi, d-1];
+  else if (e.key === "ArrowDown") t = [pi+1, d];
+  else if (e.key === "ArrowUp") t = [pi-1, d];
+  if (!t) return;
+  var person = state.people[Math.max(0, Math.min(state.people.length-1, t[0]))];
+  var next = $("#grid").querySelector("input.cell[data-p='" + person.id + "'][data-d='" + t[1] + "']");
+  if (next){ e.preventDefault(); next.focus(); next.select(); }
+});
+
+$("#heat").addEventListener("click", function(e){
+  var sq = e.target.closest(".sq");
+  if (!sq) return;
+  selDay = Number(sq.dataset.day);
+  renderHeat(); renderChampion();
+});
+$("#prevD").onclick = function(){ selDay = Math.max(1, selDay-1); renderHeat(); renderChampion(); };
+$("#nextD").onclick = function(){ selDay = Math.min(daysIn(view.y,view.m), selDay+1); renderHeat(); renderChampion(); };
+$("#todayD").onclick = function(){
+  var t = new Date();
+  if (t.getFullYear() === view.y && t.getMonth() === view.m) selDay = t.getDate();
+  renderHeat(); renderChampion();
+};
+$("#yearStrip").addEventListener("click", function(e){
+  var b = e.target.closest("[data-ym]");
+  if (!b) return;
+  view = {y: view.y, m: Number(b.dataset.ym)};
+  selDay = 1; renderGrid(); renderDerived();
+});
+
+$("#peopleFields").addEventListener("input", function(e){
+  var id = e.target.dataset.person;
+  if (!id) return;
+  var p = state.people.find(function(x){ return x.id === id; });
+  p.name = e.target.value || "Unnamed";
+  touchConfig("people"); persist(); pushSoon();
+  renderGrid(); renderDerived(); renderSyncFields();
+});
+["setHigh","setLow","setUnit","setGoal"].forEach(function(id){
+  $("#"+id).addEventListener("input", function(){
+    state.config.high = Math.max(0.5, Number($("#setHigh").value) || 4);
+    state.config.low = Math.max(0, Number($("#setLow").value) || 0);
+    state.config.unit = $("#setUnit").value;
+    state.config.goal = Math.max(0, Number($("#setGoal").value) || 0);
+    ["high","low","unit","goal"].forEach(touchConfig);
+    persist(); pushSoon(); renderGrid(); renderDerived();
+  });
+});
+
+/* sync settings */
+$("#connectBtn").onclick = function(){
+  if (isLocked()){
+    state.sync.url = BUILT_IN_URL;
+    state.sync.secret = $("#syncSecret").value.trim();
+    state.sync.me = $("#syncMe").value;
+    state.sync.auto = Number($("#syncAuto").value);
+    if (!state.sync.secret){ toast("Type the passphrase first"); return; }
+    persist(); renderSyncFields();
+    syncNow(true).then(scheduleSync);
+    return;
+  }
+  var url = $("#syncUrl").value.trim();
+  if (!/^https:\/\/script\.google\.com\/.*\/exec$/.test(url)){
+    toast("That link should start with https://script.google.com and end with /exec");
+    return;
+  }
+  state.sync.url = url;
+  state.sync.secret = $("#syncSecret").value.trim();
+  state.sync.me = $("#syncMe").value;
+  state.sync.auto = Number($("#syncAuto").value);
+  ["people","high","low","unit","goal"].forEach(function(k){ if (!state.configMeta[k]) touchConfig(k); });
+  persist(); renderSyncFields();
+  syncNow(true).then(scheduleSync);
+};
+$("#syncMe").onchange = function(){ state.sync.me = this.value; persist(); };
+$("#syncAuto").onchange = function(){ state.sync.auto = Number(this.value); persist(); renderSyncFields(); scheduleSync(); };
+$("#syncSecret").oninput = function(){ state.sync.secret = this.value.trim(); persist(); };
+$("#pullAll").onclick = function(){
+  if (!connected()){ toast("Connect first"); return; }
+  state.sync.lastPull = 0; state.meta = {};
+  syncNow(true);
+};
+$("#disconnect").onclick = function(){
+  if (!confirm("Stop syncing on this device? Data already in the sheet stays there.")) return;
+  state.sync.url = ""; persist(); renderSyncFields(); renderSyncUI();
+  toast("Disconnected on this device");
+};
+$("#copyCode").onclick = function(){
+  var code = $("#gsCode").textContent;
+  if (navigator.clipboard) navigator.clipboard.writeText(code).then(function(){ toast("Script copied — paste it into Apps Script"); });
+  else toast("Select the code below and copy it");
+};
+$("#downloadCode").onclick = function(){ download("Code.gs", $("#gsCode").textContent, "text/plain"); };
+
+function download(name, text, type){
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type:type}));
+  a.download = name; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+}
+$("#exportJson").onclick = function(){
+  download("consistency-tracker-backup.json", JSON.stringify(state, null, 2), "application/json");
+  toast("Backup downloaded");
+};
+$("#exportCsv").onclick = function(){
+  var n = daysIn(view.y, view.m);
+  var head = ["Person"];
+  for (var i = 1; i <= n; i++) head.push(i);
+  var rows = [head.join(",") + ",Total,Average"];
+  state.people.forEach(function(p){
+    var s = statsFor(p.id), cells = [];
+    for (var d = 1; d <= n; d++){ var v = val(p.id,d); cells.push(v === null ? "" : v); }
+    rows.push('"' + p.name.replace(/"/g,'""') + '",' + cells.join(",") + "," + nf(s.total) + "," + nf(s.avgMonth));
+  });
+  download(mk() + "-tracker.csv", rows.join("\n"), "text/csv");
+  toast("CSV downloaded");
+};
+$("#importBtn").onclick = function(){ $("#importFile").click(); };
+$("#importFile").onchange = function(e){
+  var f = e.target.files[0];
+  if (!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try {
+      var obj = JSON.parse(r.result);
+      if (!obj.months || !obj.people) throw new Error("bad file");
+      state = Object.assign(state, obj);
+      state.config = Object.assign({}, DEFAULT_CONFIG, obj.config || {});
+      state.dirty = state.dirty || {};
+      state.sync = Object.assign({url:"",secret:"",me:"",auto:1,lastPull:0}, obj.sync || {});
+      document.documentElement.setAttribute("data-theme", state.config.theme || "light");
+      persist(); renderAll(); toast("Backup restored");
+    } catch(err){ alert("That file isn't a tracker backup. Pick the .json you exported from here."); }
+  };
+  r.readAsText(f);
+  e.target.value = "";
+};
+$("#clearMonth").onclick = function(){
+  if (!confirm("Clear every entry for " + MONTHS[view.m] + " " + view.y + "? This clears it in the sheet too.")) return;
+  var n = daysIn(view.y, view.m);
+  state.people.forEach(function(p){ for (var d = 1; d <= n; d++) if (val(p.id,d) !== null) localEdit(p.id, d, null); });
+  persist(); renderGrid(); renderDerived(); pushSoon();
+  toast("Cleared " + MONTHS[view.m]);
+};
+
+document.addEventListener("visibilitychange", function(){
+  if (!document.hidden && connected()) syncNow(false);
+});
+window.addEventListener("online", function(){ if (connected()) syncNow(false); });
+
+/* ---------------- boot ---------------- */
+$("#gsCode").textContent = $("#gsCode").textContent.trim();
+store.load().then(function(saved){
+  if (saved && saved.months){
+    state.months = saved.months || {};
+    state.meta = saved.meta || {};
+    state.dirty = saved.dirty || {};
+    state.people = (saved.people && saved.people.length === 4) ? saved.people : state.people;
+    state.config = Object.assign({}, DEFAULT_CONFIG, saved.config || {});
+    state.configMeta = saved.configMeta || {};
+    state.sync = Object.assign({url:"",secret:"",me:"",auto:1,lastPull:0}, saved.sync || {});
+  }
+  document.documentElement.setAttribute("data-theme", state.config.theme || "light");
+  if (isLocked()){
+    state.sync.url = BUILT_IN_URL;
+    ["people","high","low","unit","goal"].forEach(function(k){ if (!state.configMeta[k]) touchConfig(k); });
+  }
+  var t = new Date();
+  view = {y:t.getFullYear(), m:t.getMonth()};
+  selDay = t.getDate();
+  renderAll();
+  if (connected()){ syncNow(false).then(scheduleSync); }
+  setInterval(renderSyncUI, 30000);
+});
+})();
+</script>
+</body>
 </html>
