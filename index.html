@@ -145,6 +145,18 @@ ol.steps code{font-family:var(--mono);font-size:12.5px;background:var(--surface-
 pre.code{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:13px;overflow:auto;max-height:300px;font-family:var(--mono);font-size:11.5px;line-height:1.5;margin:12px 0 0;white-space:pre}
 svg .gline{stroke:var(--line-soft)}
 svg text{font-family:var(--mono);font-size:10px;fill:var(--muted)}
+.welcome{position:fixed;inset:0;z-index:100;background:rgba(10,14,18,.55);display:flex;align-items:center;justify-content:center;padding:20px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.welcome[hidden]{display:none}
+.wcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px;max-width:430px;width:100%;max-height:92vh;overflow:auto}
+.wtitle{font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px}
+.wtitle .dot{color:var(--accent)}
+.wsub{color:var(--muted);font-size:13.5px;margin:0 0 4px;line-height:1.5}
+.wlabel{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin:16px 0 8px}
+.wnames{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wname{border:1.5px solid var(--line);background:var(--surface-2);border-radius:10px;padding:11px 8px;font-weight:700;font-size:14px;cursor:pointer;color:var(--c,var(--ink))}
+.wname.on{border-color:var(--c,var(--accent));background:var(--accent-soft);outline:2px solid var(--c,var(--accent));outline-offset:-1px}
+.wcard input{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--surface);color:var(--ink)}
+.werr{color:var(--warn);font-size:13px;margin-top:10px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.22s;z-index:99;max-width:88vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media (max-width:640px){
@@ -388,6 +400,20 @@ svg text{font-family:var(--mono);font-size:10px;fill:var(--muted)}
       <p class="note" id="storageNote">—</p>
     </div>
   </section>
+</div>
+
+<div class="welcome" id="welcome" hidden>
+  <div class="wcard">
+    <div class="wtitle">Consistency<span class="dot">.</span>Tracker</div>
+    <p class="wsub">This page is shared by the whole family. Set yourself up once on this device and from then on everyone's hours show up here automatically.</p>
+    <div class="wlabel">Who are you?</div>
+    <div class="wnames" id="wNames"></div>
+    <div class="wlabel">Family passphrase</div>
+    <input type="password" id="wSecret" placeholder="ask whoever set up the sheet" autocomplete="off" autocapitalize="off">
+    <div class="werr" id="wErr" hidden></div>
+    <button class="btn primary" id="wGo" style="width:100%;padding:12px;margin-top:16px">Connect me</button>
+    <button class="btn ghost" id="wSkip" style="width:100%;margin-top:8px">I'll do this later</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1144,6 +1170,8 @@ function syncNow(manual){
                 seq: (data.now === undefined ? null : data.now)};
     state.sync.lastPull = data.now || state.sync.lastPull;
     syncErr = null; lastSyncAt = Date.now();
+    state.sync.everOk = 1;
+    if (!$("#welcome").hidden && !welcomeNeeded()) $("#welcome").hidden = true;
     persist();
     if (changed || manual){ refreshGridValues(); renderDerived(); renderSettings(); }
     if (manual) toast("Sheet is up to date — " + (data.count || 0) + " entries stored");
@@ -1202,6 +1230,59 @@ function renderSyncFields(){
       ? "Connected. Entries are sent as you type and pulled back " + (Number(state.sync.auto) ? "every 15 seconds." : "when you press sync.")
       : "Nothing is sent anywhere until you add a link.");
 }
+
+/* ---------------- welcome overlay ---------------- */
+function welcomeNeeded(){
+  return isLocked() && !(state.sync.everOk && state.sync.me && state.sync.secret);
+}
+function renderWelcome(){
+  $("#wNames").innerHTML = state.people.map(function(p,i){
+    return "<button type='button' class='wname" + (state.sync.me === p.id ? " on" : "") +
+      "' data-id='" + p.id + "' style='--c:" + personColor(i) + "'>" + esc(p.name) + "</button>";
+  }).join("");
+}
+function showWelcome(){
+  renderWelcome();
+  $("#wSecret").value = state.sync.secret || "";
+  $("#wErr").hidden = true;
+  $("#welcome").hidden = false;
+}
+$("#wNames").addEventListener("click", function(e){
+  var b = e.target.closest(".wname");
+  if (!b) return;
+  state.sync.me = b.dataset.id; persist(); renderWelcome();
+});
+function welcomeConnect(){
+  var err = $("#wErr"), btn = $("#wGo");
+  var sec = $("#wSecret").value.trim();
+  if (!state.sync.me){ err.hidden = false; err.textContent = "Tap your name first."; return; }
+  if (!sec){ err.hidden = false; err.textContent = "Type the family passphrase — ask whoever set up the sheet."; return; }
+  err.hidden = true;
+  state.sync.url = BUILT_IN_URL;
+  state.sync.secret = sec;
+  persist();
+  btn.disabled = true; btn.textContent = "Connecting…";
+  syncNow(false).then(function(){
+    btn.disabled = false; btn.textContent = "Connect me";
+    if (syncErr){
+      err.hidden = false;
+      err.textContent = syncErr.indexOf("passphrase") > -1
+        ? "That passphrase isn't right — check it and try again."
+        : "Couldn't reach the sheet (" + syncErr + "). Check your internet and try again.";
+      return;
+    }
+    $("#welcome").hidden = true;
+    refreshGridValues(); renderDerived(); renderSettings(); renderSyncFields();
+    scheduleSync();
+    toast("You're in — everything syncs automatically from here on");
+  });
+}
+$("#wGo").onclick = welcomeConnect;
+$("#wSecret").addEventListener("keydown", function(e){ if (e.key === "Enter") welcomeConnect(); });
+$("#wSkip").onclick = function(){
+  $("#welcome").hidden = true;
+  toast("You can finish this any time in the Sheet sync tab");
+};
 
 /* ---------------- events ---------------- */
 function goMonth(delta){
@@ -1437,6 +1518,7 @@ store.load().then(function(saved){
   view = {y:t.getFullYear(), m:t.getMonth()};
   selDay = t.getDate();
   renderAll();
+  if (welcomeNeeded()) showWelcome();
   if (connected()){ syncNow(false).then(scheduleSync); }
   setInterval(renderSyncUI, 30000);
 });
